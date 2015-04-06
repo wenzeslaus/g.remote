@@ -118,7 +118,7 @@ def main():
 
     session = gcloudsshiface.ssh_session(
         user=options['user'], host=options['server'],
-        gsession='gcloudsshiface_session', verbose=1)
+        logfile='gcloudsshiface.log', verbose=1)
 
     full_mapset = '/'.join([remote_grassdata, remote_location, remote_mapset])
 

@@ -31,13 +31,13 @@ class ssh_session:
 
     """Session with extra state including the password to be used"""
 
-    def __init__(self, user, host, gsession, password=None, verbose=0):
+    def __init__(self, user, host, logfile, password=None, verbose=0):
 
         self.user = user
         self.host = host
         self.verbose = verbose
         self.password = password
-        self.gsession = gsession
+        self.logfile = logfile
         self.openagent = False
         self.keys = [
             'authenticity',
@@ -47,10 +47,7 @@ class ssh_session:
             'Command not found.',
             EOF,
         ]
-        # set the home path
-        home = os.path.expanduser('~')
-        logfile = os.path.join(home, self.gsession, 'g.cloud', 'ssh.log')
-        self.f = open(logfile, 'w')
+        self.f = open(self.logfile, 'w')
 
     def __repr__(self):
         outl = 'class :' + self.__class__.__name__
