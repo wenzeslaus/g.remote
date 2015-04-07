@@ -23,6 +23,7 @@ import pexpect
 import os
 import sys
 import subprocess
+import shlex
 import getpass
 import time
 
@@ -30,7 +31,10 @@ import time
 class SshSession(object):
     """Session with extra state including the password to be used"""
 
-    def __init__(self, user, host, logfile, password=None, verbose=0):
+    _backends = ['plain', 'pexpect']
+
+    def __init__(self, user, host, logfile,
+                 password=None, backend='plain', verbose=0):
 
         self.user = user
         self.host = host
@@ -47,6 +51,9 @@ class SshSession(object):
             pexpect.EOF,
         ]
         self.logfile = open(self.logfile_name, 'w')
+        if backend not in self._backends:
+            raise ValueError(_("Parameter backend must by one of %s") % self._backends)
+        self.backend = backend
 
     def __repr__(self):
         outl = 'class :' + self.__class__.__name__
@@ -58,6 +65,20 @@ class SshSession(object):
         return outl
 
     def __exec(self, command):
+        if self.backend == 'pexpect':
+            self.__pexpect_exec(command)
+        else:
+            self.__plain_exec(command)
+
+    def __plain_exec(self, command):
+        # subprocess needs a list if it should work on all platforms
+        # without shell=True
+        command_as_list = shlex.split(command)
+        # works for OpenSSH client and related scp
+        command_as_list.insert(1, "-oBatchMode=yes")
+        subprocess.call(command_as_list)
+
+    def __pexpect_exec(self, command):
         """Execute a command on the remote host. Return the output."""
 
         child = pexpect.spawn(command)  # , timeout=10
@@ -91,7 +112,7 @@ class SshSession(object):
 
     def ssh(self, command):
         """Function to launch command with ssh"""
-        return self.__exec("ssh -Y -l %s %s \"%s\"" % (self.user, self.host, command))
+        return self.__exec("ssh -l %s %s \"%s\"" % (self.user, self.host, command))
 
     def scp(self, src, dst):
         """Function to move data from client to server"""

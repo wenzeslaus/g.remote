@@ -116,7 +116,7 @@ def main():
     remote_location = options['location']
     remote_mapset = options['mapset']
 
-    session = gcloudsshiface.ssh_session(
+    session = gcloudsshiface.SshSession(
         user=options['user'], host=options['server'],
         logfile='gcloudsshiface.log', verbose=1)
 
