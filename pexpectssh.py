@@ -20,7 +20,7 @@
 
 # Original ssh_session.py
 #
-# The SSH wrapper, namelly the pexpect part was derived from ssh_session.py
+# The SSH wrapper was derived from ssh_session.py
 # example which is or was part of Pexpect (https://github.com/pexpect/pexpect).
 #
 # The original file can be found in this repository (under MIT license):
