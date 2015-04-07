@@ -14,11 +14,10 @@
 #               License (>=v2). Read the file COPYING that comes with GRASS
 #               for details.
 #
-#############################################################################
+############################################################################
 
 
 import subprocess
-import shlex
 
 
 class SshConnection(object):
