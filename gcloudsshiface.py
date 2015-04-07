@@ -3,7 +3,7 @@
 #
 ############################################################################
 #
-# MODULE:       ssh_session.py
+# MODULE:       gcloudsshiface.py (not an actual GRASS module)
 # AUTHOR(S):    Eric S. Raymond
 #
 #               Greatly modified by Nigel W. Moriarty, April 2003
@@ -18,6 +18,16 @@
 #               for details.
 #
 #############################################################################
+
+# Original ssh_session.py
+#
+# The SSH wrapper, namelly the pexpect part was derived from ssh_session.py
+# example which is or was part of Pexpect (https://github.com/pexpect/pexpect).
+#
+# The original file can be found in this repository (under MIT license):
+# http://opensource.apple.com/source/lldb/lldb-112/test/pexpect-2.4/
+# Note that the code is now relicensed under GNU GPL as MIT license allows.
+
 
 import pexpect
 import os
