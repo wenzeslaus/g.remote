@@ -19,7 +19,7 @@
 #
 #############################################################################
 
-from pexpect import *
+import pexpect
 import os
 import sys
 import subprocess
@@ -27,8 +27,7 @@ import getpass
 import time
 
 
-class ssh_session:
-
+class SshSession(object):
     """Session with extra state including the password to be used"""
 
     def __init__(self, user, host, logfile, password=None, verbose=0):
@@ -37,7 +36,7 @@ class ssh_session:
         self.host = host
         self.verbose = verbose
         self.password = password
-        self.logfile = logfile
+        self.logfile_name = logfile
         self.openagent = False
         self.keys = [
             'authenticity',
@@ -45,9 +44,9 @@ class ssh_session:
             'Enter passphrase',
             '@@@@@@@@@@@@',
             'Command not found.',
-            EOF,
+            pexpect.EOF,
         ]
-        self.f = open(self.logfile, 'w')
+        self.logfile = open(self.logfile_name, 'w')
 
     def __repr__(self):
         outl = 'class :' + self.__class__.__name__
@@ -61,12 +60,11 @@ class ssh_session:
     def __exec(self, command):
         """Execute a command on the remote host. Return the output."""
 
-        child = spawn(command  # , timeout=10
-                      )
+        child = pexpect.spawn(command)  # , timeout=10
         if self.verbose:
             sys.stderr.write("-> " + command + "\n")
         seen = child.expect(self.keys)
-        self.f.write(str(child.before) + str(child.after) + '\n')
+        self.logfile.write(str(child.before) + str(child.after) + '\n')
         if seen == 0:
             child.sendline('yes')
             seen = child.expect(self.keys)
@@ -81,11 +79,11 @@ class ssh_session:
                 seen = child.expect(self.keys)
         if seen == 3:
             lines = child.readlines()
-            self.f.write(lines)
+            self.logfile.write(lines)
         if self.verbose:
             sys.stderr.write("<- " + child.before + "|\n")
         try:
-            self.f.write(str(child.before) + str(child.after) + '\n')
+            self.logfile.write(str(child.before) + str(child.after) + '\n')
         except:
             pass
         # self.f.close()
@@ -124,4 +122,4 @@ class ssh_session:
         """Close connection"""
         if self.openagent:
             subprocess.Popen(['ssh-agent', '-k'], stdout=subprocess.PIPE)
-        return self.f.close()
+        return self.logfile.close()
