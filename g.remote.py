@@ -93,6 +93,17 @@
 #% gisprompt: old,vector,vector
 #%end
 #%option
+#% key: backend
+#% type: string
+#% required: no
+#% multiple: no
+#% key_desc: name
+#% label: Backend to be used for connection to the remote machine (server)
+#% description: The main difference between various backends are their dependencies. By default an appropriate backend is selected automatically.
+#% options: simple,pexpect,paramiko
+#% descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package
+#%end
+#%option
 #% key: workdir
 #% type: string
 #% required: no
@@ -102,9 +113,10 @@
 #% answer: ~
 #%end
 
+
 import os
+import sys
 import grass.script as gscript
-import pexpectssh
 
 
 def main():
@@ -116,11 +128,69 @@ def main():
     remote_location = options['location']
     remote_mapset = options['mapset']
 
-    session = pexpectssh.SshSession(
-        user=options['user'], host=options['server'],
-        logfile='gcloudsshiface.log', verbose=1)
+    remote_sep = '/'  # path separator on remote host
 
-    full_mapset = '/'.join([remote_grassdata, remote_location, remote_mapset])
+    requested_backend = options['backend']
+    if requested_backend:
+        backends = [requested_backend]
+    else:
+        if sys.platform.startswith('win'):
+            backends = ['paramiko', 'simple']
+        else:
+            backends = ['paramiko', 'pexpect', 'simple']
+
+    session = None
+
+    for backend in backends:
+        if backend == 'paramiko':
+            try:
+                from simplessh import SshConnection as Connection
+                session = Connection(
+                    user=options['user'], host=options['server'])
+                break
+            except ImportError:
+                gscript.verbose(_("Tried Paramiko backend but"
+                                  " it is not available"))
+                continue
+        elif backend == 'simple':
+            try:
+                from friendlyssh import Connection as Connection
+                session = Connection(
+                    user=options['user'], host=options['server'])
+                break
+            except ImportError:
+                gscript.verbose(_("Tried simple (ssh and scp) backend but"
+                                  " it is not available"))
+                continue
+        elif backend == 'pexpect':
+            try:
+                from pexpectssh import SshSession as Connection
+                session = Connection(
+                    user=options['user'], host=options['server'],
+                    logfile='gcloudsshiface.log', verbose=1)
+                break
+            except ImportError:
+                gscript.verbose(_("Tried Pexpect (ssh, scp and pexpect)"
+                                  " backend but it is not available"))
+                continue
+
+    if session is None:
+        hint = _("Please install Paramiko Python package"
+                 " or ssh and scp tools.")
+        if sys.platform.startswith('win'):
+            platform_hint = _("Note that the ssh is generally not available"
+                              " for MS Windows. Paramiko should be accessible"
+                              " through python pip but you have to make it"
+                              " available to GRASS GIS (or OSGeo4W) Python.")
+        else:
+            platform_hint = _("All should be in the software repositories."
+                              " If Paramiko is not in the repository use pip.")
+        gscript.fatal(_(
+            "No backend available. {general_hint} {platfrom_hint}").format(
+                general_hint=hint, platform_hint=platform_hint))
+
+    full_mapset = remote_sep.join(
+        [remote_grassdata, remote_location, remote_mapset])
 
     directory = "random"
     directory_path = "/tmp/{dir}".format(dir=directory)
