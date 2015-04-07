@@ -104,7 +104,7 @@
 
 import os
 import grass.script as gscript
-import gcloudsshiface
+import pexpectssh
 
 
 def main():
@@ -116,7 +116,7 @@ def main():
     remote_location = options['location']
     remote_mapset = options['mapset']
 
-    session = gcloudsshiface.SshSession(
+    session = pexpectssh.SshSession(
         user=options['user'], host=options['server'],
         logfile='gcloudsshiface.log', verbose=1)
 
@@ -124,13 +124,13 @@ def main():
 
     directory = "random"
     directory_path = "/tmp/{dir}".format(dir=directory)
-    session.ssh('mkdir {dir}'.format(dir=directory_path))
-    session.scp(script_path, directory_path)
+    session.run('mkdir {dir}'.format(dir=directory_path))
+    session.put(script_path, directory_path)
     #session.ssh('{dir}/{script}'.format(dir=directory_path, script=script_name))
     #session.ssh('TEST=ABCabc; echo $TEST'.format(dir=directory_path, script=script_name))
-    session.ssh('GRASS_BATCH_JOB={dir}/{script} grass-trunk {mapset}'.format(
+    session.run('GRASS_BATCH_JOB={dir}/{script} grass-trunk {mapset}'.format(
         dir=directory_path, script=script_name, mapset=full_mapset))
-    session.ssh('rm -r {dir}'.format(dir=directory_path))
+    session.run('rm -r {dir}'.format(dir=directory_path))
 
 
 if __name__ == "__main__":
