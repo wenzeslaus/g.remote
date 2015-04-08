@@ -30,6 +30,7 @@
 
 
 import os
+import sys
 import logging
 import tempfile
 import paramiko
@@ -56,6 +57,7 @@ class Connection(object):
             username = os.environ['LOGNAME']
 
         # Log to a temporary file.
+        # TODO: check if we need this
         templog = tempfile.mkstemp('.txt', 'ssh-')[1]
         paramiko.util.log_to_file(templog)
 
@@ -118,18 +120,25 @@ class Connection(object):
         """Copies a file between the local host and the remote host."""
         if not remotepath:
             remotepath = os.path.split(localpath)[1]
+            # TODO: support directory as remotepath as scp does
         self._sftp_connect()
         self._sftp.put(localpath, remotepath)
 
-    def execute(self, command):
+    def chmod(self, path, mode):
+        """Change permission (mode) of a remote file or directory"""
+        self._sftp.chmod(path, mode)
+
+    def run(self, command):
         """Execute the given commands on a remote machine."""
         channel = self._transport.open_session()
         channel.exec_command(command)
-        output = channel.makefile('rb', -1).readlines()
-        if output:
-            return output
-        else:
-            return channel.makefile_stderr('rb', -1).readlines()
+        stdout = channel.makefile('rb', -1)
+        stderr = channel.makefile_stderr('rb', -1)
+        if stderr:
+            # shutil.copyfileobj
+            sys.stdout.write(stdout.read())
+        if stderr:
+            sys.stderr.write(stderr.read())
 
     def close(self):
         """Closes the connection and cleans up."""

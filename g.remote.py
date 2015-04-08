@@ -116,6 +116,7 @@
 
 import os
 import sys
+import stat
 import grass.script as gscript
 
 
@@ -144,9 +145,10 @@ def main():
     for backend in backends:
         if backend == 'paramiko':
             try:
-                from simplessh import SshConnection as Connection
+                from friendlyssh import Connection
                 session = Connection(
-                    user=options['user'], host=options['server'])
+                    username=options['user'], host=options['server'])
+                gscript.verbose(_("Using Paramiko backend"))
                 break
             except ImportError:
                 gscript.verbose(_("Tried Paramiko backend but"
@@ -157,6 +159,7 @@ def main():
                 from friendlyssh import Connection as Connection
                 session = Connection(
                     user=options['user'], host=options['server'])
+                gscript.verbose(_("Using simple (ssh and scp) backend"))
                 break
             except ImportError:
                 gscript.verbose(_("Tried simple (ssh and scp) backend but"
@@ -168,6 +171,7 @@ def main():
                 session = Connection(
                     user=options['user'], host=options['server'],
                     logfile='gcloudsshiface.log', verbose=1)
+                gscript.verbose(_("Using Pexpect (with ssh and scp) backend"))
                 break
             except ImportError:
                 gscript.verbose(_("Tried Pexpect (ssh, scp and pexpect)"
@@ -194,12 +198,14 @@ def main():
 
     directory = "random"
     directory_path = "/tmp/{dir}".format(dir=directory)
+    remote_script_path = "{dir}/{script}".format(dir=directory_path, script=script_name)
     session.run('mkdir {dir}'.format(dir=directory_path))
-    session.put(script_path, directory_path)
+    session.put(script_path, remote_script_path)
+    session.chmod(remote_script_path, stat.S_IRWXU)
     #session.ssh('{dir}/{script}'.format(dir=directory_path, script=script_name))
     #session.ssh('TEST=ABCabc; echo $TEST'.format(dir=directory_path, script=script_name))
-    session.run('GRASS_BATCH_JOB={dir}/{script} grass-trunk {mapset}'.format(
-        dir=directory_path, script=script_name, mapset=full_mapset))
+    session.run('GRASS_BATCH_JOB={script} grass-trunk {mapset}'.format(
+        script=remote_script_path, mapset=full_mapset))
     session.run('rm -r {dir}'.format(dir=directory_path))
 
 
