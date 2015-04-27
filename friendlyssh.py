@@ -36,6 +36,22 @@ import tempfile
 import paramiko
 
 
+def get_key_from_agent():
+    """Use SSH agent to get a key
+
+    Attempt to authenticate to the given transport using first of the private
+    keys available from an SSH agent.
+    """
+
+    agent = paramiko.Agent()
+    agent_keys = agent.get_keys()
+    if len(agent_keys) == 0:
+        return
+
+    for key in agent_keys:
+        return key
+
+
 class Connection(object):
 
     """Connects and logs into the specified hostname.
@@ -79,9 +95,7 @@ class Connection(object):
                 else:
                     raise TypeError("You have not specified a password or key.")
 
-            private_key_file = os.path.expanduser(private_key)
-            rsa_key = paramiko.RSAKey.from_private_key_file(private_key_file)
-            self._transport.connect(username=username, pkey=rsa_key)
+            self._transport.connect(username=username, pkey=get_key_from_agent())
 
     def _sftp_connect(self):
         """Establish the SFTP connection."""
