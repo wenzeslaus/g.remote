@@ -214,6 +214,12 @@ def main():
     unpack.write("#!/usr/bin/env python\n")
     unpack.write("import grass.script as gscript\n")
 
+    region_name = 'g_remote_current_region'
+    gscript.run_command('g.region', save=region_name, overwrite=True)
+    region_file = gscript.find_file(region_name, element='windows')['file']
+    session.put(region_file, '/'.join([full_mapset, 'windows', region_name]))
+    unpack.write("gscript.run_command('g.region', region='{region}')\n".format(region=region_name))
+
     files_to_transfer = []
     for raster in rasters:
         filename = raster + '.rpack'
