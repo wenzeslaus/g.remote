@@ -204,7 +204,7 @@ def main():
     session.chmod(remote_script_path, stat.S_IRWXU)
     #session.ssh('{dir}/{script}'.format(dir=directory_path, script=script_name))
     #session.ssh('TEST=ABCabc; echo $TEST'.format(dir=directory_path, script=script_name))
-    session.run('GRASS_BATCH_JOB={script} grass-trunk {mapset}'.format(
+    session.run('GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
         script=remote_script_path, mapset=full_mapset))
     session.run('rm -r {dir}'.format(dir=directory_path))
 
