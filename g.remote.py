@@ -83,14 +83,15 @@
 #% key_desc: directory
 #% description: GRASS Mapset on a remote host
 #%end
-#%option
-#% key: vector
-#% type: string
+#%option G_OPT_R_INPUTS
+#% key: raster
 #% required: no
-#% multiple: yes
-#% key_desc: name
 #% description: Name of input vector map(s) used by GRASS script
-#% gisprompt: old,vector,vector
+#%end
+#%option G_OPT_V_INPUTS
+#% key: vector
+#% required: no
+#% description: Name of input vector map(s) used by GRASS script
 #%end
 #%option
 #% key: backend
@@ -128,6 +129,11 @@ def main():
     remote_grassdata = options['grassdata']
     remote_location = options['location']
     remote_mapset = options['mapset']
+
+    if options['raster']:
+        rasters = options['raster'].split(',')
+    else:
+        rasters = []
 
     remote_sep = '/'  # path separator on remote host
 
@@ -202,6 +208,31 @@ def main():
     session.run('mkdir {dir}'.format(dir=directory_path))
     session.put(script_path, remote_script_path)
     session.chmod(remote_script_path, stat.S_IRWXU)
+
+    unpack_script = 'unpack_script.py'
+    unpack = open(unpack_script, 'w')
+    unpack.write("#!/usr/bin/env python\n")
+    unpack.write("import grass.script as gscript\n")
+
+    files_to_transfer = []
+    for raster in rasters:
+        filename = raster + '.rpack'
+        gscript.run_command('r.pack', input=raster, output=filename, overwrite=True)
+        remote_filename = "{dir}/{file}".format(dir=directory_path, file=filename)
+        files_to_transfer.append((filename, remote_filename))
+        unpack.write("gscript.run_command('r.unpack', input='{file}', overwrite=True)\n".format(file=remote_filename))
+
+    for filenames in files_to_transfer:
+        session.put(filenames[0], filenames[1])
+
+    unpack.close()
+    # run the unpack script
+    remote_unpack_script_path = "{dir}/{file}".format(dir=directory_path, file=unpack_script)
+    session.put(unpack_script, remote_unpack_script_path)
+    session.chmod(remote_unpack_script_path, stat.S_IRWXU)
+    session.run('GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
+        script=remote_unpack_script_path, mapset=full_mapset))
+
     #session.ssh('{dir}/{script}'.format(dir=directory_path, script=script_name))
     #session.ssh('TEST=ABCabc; echo $TEST'.format(dir=directory_path, script=script_name))
     session.run('GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
