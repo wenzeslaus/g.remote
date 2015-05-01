@@ -123,6 +123,7 @@
 import os
 import sys
 import stat
+from collections import Iterable
 
 import grass.script as gscript
 
@@ -202,68 +203,32 @@ class GrassSession(object):
         directory_path = "/tmp/{dir}".format(dir=directory)
         self.connection.run('mkdir {dir}'.format(dir=directory_path))
 
-    def put_rasters(self, rasters):
-        unpack_script = 'unpack_script.py'
-        unpack = open(unpack_script, 'w')
-        unpack.write("#!/usr/bin/env python\n")
-        unpack.write("import grass.script as gscript\n")
-
+    def put_region(self):
         region_name = 'g_remote_current_region'
         gscript.run_command('g.region', save=region_name, overwrite=True)
         region_file = gscript.find_file(region_name, element='windows')['file']
         self.connection.put(region_file, '/'.join([self.full_mapset, 'windows', region_name]))
-        unpack.write("gscript.run_command('g.region', region='{region}')\n".format(region=region_name))
+        self.run_command('g.region', region=region_name)
 
-        files_to_transfer = []
+    def put_rasters(self, rasters):
         for raster in rasters:
             filename = raster + '.rpack'
             gscript.run_command(
                 'r.pack', input=raster, output=filename, overwrite=True)
             remote_filename = "{dir}/{file}".format(
                 dir=self.directory, file=filename)
-            files_to_transfer.append((filename, remote_filename))
-            unpack.write("gscript.run_command('r.unpack', input='{file}', overwrite=True)\n".format(file=remote_filename))
-
-        for filenames in files_to_transfer:
-            self.connection.put(filenames[0], filenames[1])
-
-        unpack.close()
-        # run the unpack script
-        remote_unpack_script_path = "{dir}/{file}".format(
-            dir=self.directory, file=unpack_script)
-        self.connection.put(unpack_script, remote_unpack_script_path)
-        self.connection.chmod(remote_unpack_script_path, stat.S_IRWXU)
-        self.connection.run(
-            'GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
-                script=remote_unpack_script_path, mapset=self.full_mapset))
+            self.connection.put(filename, remote_filename)
+            self.run_command('r.unpack', input=remote_filename, overwrite=True)
 
     def get_rasters(self, raster_outputs):
-        pack_script = 'pack_script.py'
-        pack = open(pack_script, 'w')
-        pack.write("#!/usr/bin/env python\n")
-        pack.write("import grass.script as gscript\n")
-
-        files_to_transfer_back = []
         for raster in raster_outputs:
             filename = raster + '.rpack'
             remote_filename = "{dir}/{file}".format(
                 dir=self.directory, file=filename)
-            files_to_transfer_back.append((remote_filename, filename))
-            pack.write("gscript.run_command('r.pack', input='{map}', output='{file}', overwrite=True)\n".format(map=raster, file=remote_filename))
-
-        pack.close()
-        # run the pack script
-        remote_pack_script_path = "{dir}/{file}".format(
-            dir=self.directory, file=pack_script)
-        self.connection.put(pack_script, remote_pack_script_path)
-        self.connection.chmod(remote_pack_script_path, stat.S_IRWXU)
-        self.connection.run(
-            'GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
-                script=remote_pack_script_path, mapset=self.full_mapset))
-
-        for filenames in files_to_transfer_back:
-            self.connection.get(filenames[0], filenames[1])
-            gscript.run_command('r.unpack', input=filenames[1], overwrite=True)
+            self.run_command('r.pack', input=raster, output=remote_filename,
+                             overwrite=True)
+            self.connection.get(remote_filename, filename)
+            gscript.run_command('r.unpack', input=filename, overwrite=True)
 
     # TODO: perhaps we can remove by default? but not removing is faster
     def run_script(self, script, remove=False):
@@ -281,6 +246,36 @@ class GrassSession(object):
                 script=remote_script_path, mapset=self.full_mapset))
         if remove:
             self.connection.run('rm {file}'.format(file=remote_script_path))
+
+    def run_code(self, code):
+        script_name = 'pack_script.py'
+        script = open(script_name, 'w')
+
+        script.write("#!/usr/bin/env python\n")
+        script.write("import grass.script as gscript\n")
+
+        if (not isinstance(code, str) and not isinstance(code, str)
+           and isinstance(code, Iterable)):
+            for line in code:
+                script.write(line + '\n')
+        else:
+            script.write(code)
+        script.close()
+        self.run_script(script_name, remove=True)
+        os.remove(script_name)
+
+    def run_command(self, *args, **kwargs):
+        # TODO: perhaps PyGRASS would be appropriate here
+        parameters = ["'%s'" % str(arg) for arg in args]
+        for opt, val in kwargs.iteritems():
+            if "'" in str(val):
+                quote = '"'
+            else:
+                quote = "'"
+            parameters.append('{opt}={q}{val}{q}'.format(
+                opt=opt, val=str(val), q=quote))
+        code = "gscript.run_command(%s)\n" % ', '.join(parameters)
+        self.run_code(code)
 
     def close(self):
         self.connection.run('rm -r {dir}'.format(dir=self.directory))
@@ -307,6 +302,7 @@ def main():
     session = get_session(options)
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
                             location=remote_location, mapset=remote_mapset)
+    gsession.put_region()
     gsession.put_rasters(rasters)
     gsession.run_script(script_path)
     gsession.get_rasters(raster_outputs)
