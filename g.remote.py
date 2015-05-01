@@ -93,6 +93,11 @@
 #% required: no
 #% description: Name of input vector map(s) used by GRASS script
 #%end
+#%option G_OPT_R_OUTPUTS
+#% key: raster_output
+#% required: no
+#% description: Name of output raster map(s) used by GRASS script
+#%end
 #%option
 #% key: backend
 #% type: string
@@ -134,6 +139,11 @@ def main():
         rasters = options['raster'].split(',')
     else:
         rasters = []
+
+    if options['raster_output']:
+        raster_outputs = options['raster_output'].split(',')
+    else:
+        raster_outputs = []
 
     remote_sep = '/'  # path separator on remote host
 
@@ -243,6 +253,31 @@ def main():
     #session.ssh('TEST=ABCabc; echo $TEST'.format(dir=directory_path, script=script_name))
     session.run('GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
         script=remote_script_path, mapset=full_mapset))
+
+    pack_script = 'pack_script.py'
+    pack = open(pack_script, 'w')
+    pack.write("#!/usr/bin/env python\n")
+    pack.write("import grass.script as gscript\n")
+
+    files_to_transfer_back = []
+    for raster in raster_outputs:
+        filename = raster + '.rpack'
+        remote_filename = "{dir}/{file}".format(dir=directory_path, file=filename)
+        files_to_transfer_back.append((remote_filename, filename))
+        pack.write("gscript.run_command('r.pack', input='{map}', output='{file}', overwrite=True)\n".format(map=raster, file=remote_filename))
+
+    pack.close()
+    # run the pack script
+    remote_pack_script_path = "{dir}/{file}".format(dir=directory_path, file=pack_script)
+    session.put(pack_script, remote_pack_script_path)
+    session.chmod(remote_pack_script_path, stat.S_IRWXU)
+    session.run('GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
+        script=remote_pack_script_path, mapset=full_mapset))
+
+    for filenames in files_to_transfer_back:
+        session.get(filenames[0], filenames[1])
+        gscript.run_command('r.unpack', input=filenames[1], overwrite=True)
+
     session.run('rm -r {dir}'.format(dir=directory_path))
 
 
