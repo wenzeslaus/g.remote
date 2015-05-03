@@ -31,25 +31,7 @@
 
 import os
 import sys
-import logging
-import tempfile
 import paramiko
-
-
-def get_key_from_agent():
-    """Use SSH agent to get a key
-
-    Attempt to authenticate to the given transport using first of the private
-    keys available from an SSH agent.
-    """
-
-    agent = paramiko.Agent()
-    agent_keys = agent.get_keys()
-    if len(agent_keys) == 0:
-        return
-
-    for key in agent_keys:
-        return key
 
 
 class Connection(object):
@@ -65,37 +47,17 @@ class Connection(object):
                  port=22,
                  ):
 
-        self.log = logging.getLogger("zoinksftp.ssh.Connection")
-
         self._sftp_live = False
         self._sftp = None
-        if not username:
-            username = os.environ['LOGNAME']
 
-        # Log to a temporary file.
-        # TODO: check if we need this
-        templog = tempfile.mkstemp('.txt', 'ssh-')[1]
-        paramiko.util.log_to_file(templog)
-
-        # Begin the SSH transport.
-        self._transport = paramiko.Transport((host, port))
+        self._client = paramiko.SSHClient()
+        self._client.load_system_host_keys()
+        self._client.set_missing_host_key_policy(paramiko.client.WarningPolicy())
+        self._client.connect(hostname=host, port=port,
+                             username=username, password=password,
+                             key_filename=private_key)
+        self._transport = self._client.get_transport()
         self._tranport_live = True
-        # Authenticate the transport.
-        if password:
-            # Using Password.
-            self._transport.connect(username=username, password=password)
-        else:
-            # Use Private Key.
-            if not private_key:
-                # Try to use default key.
-                if os.path.exists(os.path.expanduser('~/.ssh/id_rsa')):
-                    private_key = '~/.ssh/id_rsa'
-                elif os.path.exists(os.path.expanduser('~/.ssh/id_dsa')):
-                    private_key = '~/.ssh/id_dsa'
-                else:
-                    raise TypeError("You have not specified a password or key.")
-
-            self._transport.connect(username=username, pkey=get_key_from_agent())
 
     def _sftp_connect(self):
         """Establish the SFTP connection."""
