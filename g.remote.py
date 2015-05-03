@@ -53,14 +53,11 @@
 #% key_desc: name
 #% description: Name or IP of server (remote host) to be connected
 #%end
-#%option
+#%option G_OPT_F_INPUT
 #% key: grass_script
-#% type: string
 #% required: no
 #% multiple: no
-#% key_desc: name
 #% description: Path to the input GRASS script
-#% gisprompt: old,file,input
 #%end
 #%option
 #% key: grassdata
@@ -153,7 +150,7 @@ def get_session(options):
                 continue
         elif backend == 'simple':
             try:
-                from friendlyssh import Connection as Connection
+                from simplessh import SshConnection as Connection
                 session = Connection(
                     user=options['user'], host=options['server'])
                 gscript.verbose(_("Using simple (ssh and scp) backend"))
@@ -186,7 +183,7 @@ def get_session(options):
             platform_hint = _("All should be in the software repositories."
                               " If Paramiko is not in the repository use pip.")
         gscript.fatal(_(
-            "No backend available. {general_hint} {platfrom_hint}").format(
+            "No backend available. {general_hint} {platform_hint}").format(
             general_hint=hint, platform_hint=platform_hint))
     return session
 

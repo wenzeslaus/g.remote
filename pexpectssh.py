@@ -124,6 +124,16 @@ class SshSession(object):
         return self._exec(
             "scp %s@%s:%s %s" % (self.user, self.host, remotepath, localpath))
 
+    def chmod(self, path, mode):
+        """Change permission (mode) of a remote file or directory
+
+        For files executable by user use ``mode=stat.S_IRWXU``.
+
+        :param mode: permissions defined in stat package
+        """
+        return self.run("chmod {mode} {path}".format(
+            path=path, mode=oct(mode)))
+
     def add(self):
         """Function to launch ssh-add"""
         sess = self._exec("ssh-add")
