@@ -131,10 +131,9 @@ def get_session(options):
     if requested_backend:
         backends = [requested_backend]
     else:
-        if sys.platform.startswith('win'):
-            backends = ['paramiko', 'simple']
-        else:
-            backends = ['paramiko', 'pexpect', 'simple']
+        # on win there is minimal chance of ssh but try anyway
+        # pexpect only upon request, it is specific and insufficiently tested
+        backends = ['paramiko', 'simple']
     session = None
     for backend in backends:
         if backend == 'paramiko':
