@@ -185,9 +185,9 @@ def get_session(options):
                     password=options['password'], port=options['port'])
                 gscript.verbose(_("Using Paramiko backend"))
                 break
-            except ImportError:
+            except ImportError as error:
                 gscript.verbose(_("Tried Paramiko backend but"
-                                  " it is not available"))
+                                  " it is not available (%s)" % error))
                 continue
         elif backend == 'simple':
             try:
@@ -197,9 +197,9 @@ def get_session(options):
                     password=options['password'], port=options['port'])
                 gscript.verbose(_("Using simple (ssh and scp) backend"))
                 break
-            except ImportError:
+            except ImportError as error:
                 gscript.verbose(_("Tried simple (ssh and scp) backend but"
-                                  " it is not available"))
+                                  " it is not available (%s)" % error))
                 continue
         elif backend == 'pexpect':
             try:
@@ -210,13 +210,15 @@ def get_session(options):
                     password=options['password'], port=options['port'])
                 gscript.verbose(_("Using Pexpect (with ssh and scp) backend"))
                 break
-            except ImportError:
+            except ImportError as error:
                 gscript.verbose(_("Tried Pexpect (ssh, scp and pexpect)"
-                                  " backend but it is not available"))
+                                  " backend but it is not available"
+                                  " (%s)" % error))
                 continue
     if session is None:
         hint = _("Please install Paramiko Python package"
                  " or ssh and scp tools.")
+        verbose_message = _("Use --verbose flag to get more information.")
         if sys.platform.startswith('win'):
             platform_hint = _("Note that the ssh is generally not available"
                               " for MS Windows. Paramiko should be accessible"
@@ -226,8 +228,10 @@ def get_session(options):
             platform_hint = _("All should be in the software repositories."
                               " If Paramiko is not in the repository use pip.")
         gscript.fatal(_(
-            "No backend available. {general_hint} {platform_hint}").format(
-            general_hint=hint, platform_hint=platform_hint))
+            "No backend available. {general_hint} {platform_hint}"
+            " {verbose}").format(
+                general_hint=hint, platform_hint=platform_hint,
+                verbose=verbose_message))
     return session
 
 
