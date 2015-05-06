@@ -3,7 +3,117 @@
 GRASS GIS module for executing scripts on a remote server
 
 
-## Example
+## Installation
+
+### Linux
+
+You need something which provides `ssh` and `scp` commands or
+you need to have Paramico Python package.
+
+To install SSH on Ubuntu use:
+
+    sudo apt-get install openssh-client
+
+This package provided `ssh` and other tools required used by
+the `simple` backend.
+
+You can also use Python SSH implementation Paramiko:
+
+To install Paramiko on Ubuntu use:
+
+    sudo apt-get install python-paramiko
+
+Use Git to get the latest source code from this repository,
+then in GRASS session, use:
+
+    python /path/to/g.remote.py ...
+
+to run the command. This will give you the CLI access. If you want to
+get GUI dialog, follow the steps provided for MS Windows.
+
+
+### MS Windows
+
+On MS Windows you have to use Paramiko which depends on PyCrypto
+and ECDSA Python packages.
+Paramiko can be installed through `pip` and in theory including
+the dependencies. Unfortunately, PyCrypto is for different reasons
+difficult to install and must be installed manually.
+
+Install PyCrypto using installer from *Voidspace*:
+
+* http://www.voidspace.org.uk/python/modules.shtml#pycrypto
+
+Start the installer (the `.exe` file). At one point you will be offered
+to which Python you want to install it. If you are lucky, you will be
+able to select the Python which is associated with your GRASS GIS
+installation (or OSGeo4W installation if you are using GRASS GIS from
+OSGeo4W). However, likely there will be only one Python which is
+in the Windows Registry and is not the one you want. Install PyCrypto
+to the Python installation available and remember the path shown for
+this Python installation. Finish the installation.
+
+After installation, browse in file manager to the `site-packages`
+directory of the Python installation you selected (this is the directory
+you should have remembered). Find `Crypto` directory there.
+Copy this directory to the `site-packages` directory of you GRASS GIS
+installation (or OSGeo4W installation). For standalone GRASS GIS
+(WinGRASS), the directory is something like:
+
+    C:\Program File (x86)\GRASS GIS 7.0.0\Python27\lib\site-packages
+
+Note that you will have to copy the file as an administrator (you should
+get a dialog for that).
+
+Run GRASS GIS as an administrator. It is enough to start only
+the command line, we won't use GUI, but it is still necessary to
+select some Location and Mapset.
+
+In the GRASS GIS session, in the system ("black") command line,
+install ECDSA using `pip`:
+
+    python -m pip install ecdsa
+
+Then install Paramiko but without its dependencies:
+
+    python -m pip install --no-deps paramiko
+
+We need to use `--no-deps` (or --no-dependencies) to skip installation
+of PyCrypto (which in ideal world would be compiled on the fly).
+
+To gain general understanding of installing packages to Python
+associated with GRASS GIS or OSGeo4W read:
+
+* https://trac.osgeo.org/osgeo4w/wiki/ExternalPythonPackages
+* http://www.region3dfg.org/comp/python_widows/activestate_python/osgeoactivestate
+
+Now you can proceed with getting *g.remote*.
+Unless you want to use Git, download the ZIP file with latest source
+code. Uncompress the ZIP file. Put the content somewhere in your home
+directory. Then in GRASS GIS in the main GUI menu use:
+
+    File > Launch script
+
+Browse to the `g.remote.py` file and select it.
+You will be asked if you want to add the directory with `g.remote.py`
+file to GRASS GIS Addons paths. For best results answer yes (OK).
+
+
+## Notes for MS Windows users
+
+It is expected that all servers are using unix-style newlines
+(LF, line feet, `\n`), so your script file you have to use these
+and not the MS Windows line endings. For example in Spyder editor,
+you find the settings in the menu here:
+
+    Source > Convert end-of-line characters
+
+in the code itself, just use `\n` as usually and let Python solve it
+for you. Similarly, for paths in you script, you use `os.linesep` to
+get the proper file path delimiter (again, this you should do always).
+
+
+## Example of connection
 
 ### Preparation
 
