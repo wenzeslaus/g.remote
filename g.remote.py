@@ -46,12 +46,30 @@
 #% description: User name
 #%end
 #%option
+#% key: password
+#% type: string
+#% required: no
+#% multiple: no
+#% key_desc: secret
+#% description: User password
+#%end
+#%option
 #% key: server
 #% type: string
 #% required: yes
 #% multiple: no
 #% key_desc: name
 #% description: Name or IP of server (remote host) to be connected
+#%end
+#%option
+#% key: port
+#% type: integer
+#% required: no
+#% multiple: no
+#% answer: 22
+#% key_desc: portnum
+#% label: Port on the server used for the connection
+#% description: If you don't know it, then the default value is probably fine.
 #%end
 #%option G_OPT_F_INPUT
 #% key: grass_script
@@ -79,6 +97,14 @@
 #% required: yes
 #% key_desc: directory
 #% description: GRASS Mapset on a remote host
+#%end
+#%option
+#% key: grass_command
+#% type: string
+#% required: yes
+#% key_desc: name
+#% answer: grass70
+#% description: Name or path of a command to run GRASS GIS
 #%end
 #%option G_OPT_R_INPUTS
 #% key: raster
@@ -125,6 +151,18 @@ from collections import Iterable
 import grass.script as gscript
 
 
+def ensure_nones(dictionary, keys):
+    for key in keys:
+        if not dictionary[key]:
+            dictionary[key] = None
+
+
+def to_ints(dictionary, keys):
+    for key in keys:
+        if dictionary[key]:
+            dictionary[key] = int(dictionary[key])
+
+
 # options could be replaced by individual parameters
 def get_session(options):
     requested_backend = options['backend']
@@ -135,12 +173,15 @@ def get_session(options):
         # pexpect only upon request, it is specific and insufficiently tested
         backends = ['paramiko', 'simple']
     session = None
+    ensure_nones(options, ['port', 'password'])
+    to_ints(options, ['port'])
     for backend in backends:
         if backend == 'paramiko':
             try:
                 from friendlyssh import Connection
                 session = Connection(
-                    username=options['user'], host=options['server'])
+                    username=options['user'], host=options['server'],
+                    password=options['password'], port=options['port'])
                 gscript.verbose(_("Using Paramiko backend"))
                 break
             except ImportError:
@@ -151,7 +192,8 @@ def get_session(options):
             try:
                 from simplessh import SshConnection as Connection
                 session = Connection(
-                    user=options['user'], host=options['server'])
+                    user=options['user'], host=options['server'],
+                    password=options['password'], port=options['port'])
                 gscript.verbose(_("Using simple (ssh and scp) backend"))
                 break
             except ImportError:
@@ -163,7 +205,8 @@ def get_session(options):
                 from pexpectssh import SshSession as Connection
                 session = Connection(
                     user=options['user'], host=options['server'],
-                    logfile='gcloudsshiface.log', verbose=1)
+                    logfile='gcloudsshiface.log', verbose=1,
+                    password=options['password'], port=options['port'])
                 gscript.verbose(_("Using Pexpect (with ssh and scp) backend"))
                 break
             except ImportError:
@@ -188,8 +231,9 @@ def get_session(options):
 
 
 class GrassSession(object):
-    def __init__(self, connection, grassdata, location, mapset):
+    def __init__(self, connection, grassdata, location, mapset, grass_command):
         self.connection = connection
+        self.grass_command = grass_command
         remote_sep = '/'  # path separator on remote host
         self.full_mapset = remote_sep.join(
             [grassdata, location, mapset])
@@ -238,8 +282,9 @@ class GrassSession(object):
         self.connection.put(script_path, remote_script_path)
         self.connection.chmod(remote_script_path, stat.S_IRWXU)
         self.connection.run(
-            'GRASS_BATCH_JOB={script} grass-trunk -text {mapset}'.format(
-                script=remote_script_path, mapset=self.full_mapset))
+            'GRASS_BATCH_JOB={script} {grass} -text {mapset}'.format(
+                script=remote_script_path, mapset=self.full_mapset,
+                grass=self.grass_command))
         if remove:
             self.connection.run('rm {file}'.format(file=remote_script_path))
 
@@ -297,7 +342,8 @@ def main():
 
     session = get_session(options)
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
-                            location=remote_location, mapset=remote_mapset)
+                            location=remote_location, mapset=remote_mapset,
+                            grass_command=options['grass_command'])
     gsession.put_region()
     gsession.put_rasters(rasters)
     gsession.run_script(script_path)
