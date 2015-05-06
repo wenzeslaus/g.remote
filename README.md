@@ -1,6 +1,16 @@
 # g.remote
 
-GRASS GIS module for executing scripts on a remote server
+GRASS GIS module for executing scripts on a remote server.
+If it will prove useful, it will be moved to official GRASS GIS Addons
+repository.
+
+The focus is on running a script on a remote machine in synchronous mode
+(you wait for the result) and getting the new data back to the local
+machine.
+
+It is expected that the server has GRASS GIS, SSH server and
+GRASS GIS Location which matches the projection of the Location
+on the local machine.
 
 
 ## Installation
@@ -131,7 +141,50 @@ Run the following locally:
 
 ### Running g.remote
 
-    g.remote user=john password=Ajf_de8sd server=example.com grass_script=/path/to/test_script.py grassdata=/grassdata location=nc_spm mapset=practice1 raster=fractal_surface raster_output=elevation
+    g.remote user=john server=example.com grass_script=/path/to/test.py grassdata=/grassdata location=nc_spm mapset=practice1 raster=fractal_surface raster_output=elevation
+
+In case you have access using password, add also `password` parameter.
+
+
+## Example of server setup
+
+A user using GRASS GIS through SSH must have full (non-root) access to
+the operating system, so high security measures should be applied.
+One possible solution is using Docker.
+
+Build an image from repository:
+
+    docker build -t john/grass git://github.com/wenzeslaus/grass-gis-docker.git
+
+Run a new container:
+
+    docker run -d -P --name grass1 -v /some/host/grassdata/:/grassdata john/grass
+
+This adds `/some/host/grassdata/` directory on host machine
+as `/grassdata` directory in the container. You will need to solve
+permissions and ownership on the host machine using something like:
+
+    chown john:grassusers
+    sefacl -Rdm g:grassusers:rwX
+
+See some more details at:
+
+* https://github.com/wenzeslaus/grass-gis-docker
+
+Each running container will have its port and password. You should
+give the access only to people you trust. The containers should
+be recreated periodically.
+
+Possible improvements include using docker with `--volumes-from``
+parameter and scripts (or some actual tool) to manage the containers.
+Management of the data should be improved overall to set right
+permissions on the mounted volume and manage the rights in a fine way
+to protect data shared between users.
+
+In comparison to passwords, SSH keys can be much more easier
+and secure but are harder to setup with Docker. They should be
+used in cases where users already have SSH access with keys
+to the remote machine.
 
 
 ## Copyright and License
