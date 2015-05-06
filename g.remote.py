@@ -145,6 +145,7 @@
 
 import os
 import sys
+import io
 import stat
 from collections import Iterable
 
@@ -289,18 +290,19 @@ class GrassSession(object):
             self.connection.run('rm {file}'.format(file=remote_script_path))
 
     def run_code(self, code):
+        # TODO: io requires unicode but we should be able to accept str and unicode
         script_name = 'pack_script.py'
-        script = open(script_name, 'w')
+        script = io.open(script_name, 'w', newline='')
 
-        script.write("#!/usr/bin/env python\n")
-        script.write("import grass.script as gscript\n")
+        script.write(u"#!/usr/bin/env python\n")
+        script.write(u"import grass.script as gscript\n")
 
         if (not isinstance(code, str) and not isinstance(code, str)
            and isinstance(code, Iterable)):
             for line in code:
-                script.write(line + '\n')
+                script.write(unicode(line + '\n'))
         else:
-            script.write(code)
+            script.write(unicode(code))
         script.close()
         self.run_script(script_name, remove=True)
         os.remove(script_name)
