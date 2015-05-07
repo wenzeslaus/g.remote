@@ -40,6 +40,9 @@ then in GRASS session, use:
 
 to run the command. This will give you the CLI access. If you want to
 get GUI dialog, follow the steps provided for MS Windows.
+Alternatively, use the following command to run it:
+
+    python $GISBASE/gui/wxpython/gui_core/forms.py $PWD/g.remote.py
 
 
 ### MS Windows
@@ -179,7 +182,8 @@ Possible improvements include using docker with `--volumes-from``
 parameter and scripts (or some actual tool) to manage the containers.
 Management of the data should be improved overall to set right
 permissions on the mounted volume and manage the rights in a fine way
-to protect data shared between users.
+to protect data shared between users. Another improvement
+is to use PostgreSQL to store attributes of vector maps.
 
 In comparison to passwords, SSH keys can be much more easier
 and secure but are harder to setup with Docker. They should be
