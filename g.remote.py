@@ -19,39 +19,14 @@
 ############################################################################
 
 #%module
-#% description: Connects GRASS session with another one in a cluster system.
+#% description: Exectues processes in GRASS GIS session on a server
 #% keyword: general
 #% keyword: cloud computing
+#% keyword: server
 #%end
 #%flag
 #% key: k
-#% description: Keep temporal files and mapsets
-#%end
-#%option
-#% key: config
-#% type: string
-#% required: no
-#% multiple: no
-#% label: Path to ASCII file containing authentication parameters
-#% description: "-" to pass the parameters interactively
-#% gisprompt: old,file,input
-#% guisection: Define
-#%end
-#%option
-#% key: user
-#% type: string
-#% required: no
-#% multiple: no
-#% key_desc: name
-#% description: User name
-#%end
-#%option
-#% key: password
-#% type: string
-#% required: no
-#% multiple: no
-#% key_desc: secret
-#% description: User password
+#% description: Keep temporary files
 #%end
 #%option
 #% key: server
@@ -71,11 +46,31 @@
 #% label: Port on the server used for the connection
 #% description: If you don't know it, then the default value is probably fine.
 #%end
-#%option G_OPT_F_INPUT
-#% key: grass_script
+#%option
+#% key: user
+#% type: string
 #% required: no
 #% multiple: no
-#% description: Path to the input GRASS script
+#% key_desc: name
+#% description: User name
+#% guisection: Authentication
+#%end
+#%option
+#% key: password
+#% type: string
+#% required: no
+#% multiple: no
+#% key_desc: secret
+#% description: User password
+#% guisection: Authentication
+#%end
+#%option G_OPT_F_INPUT
+#% key: config
+#% required: no
+#% multiple: no
+#% label: Path to ASCII file containing authentication parameters
+#% description: "-" to pass the parameters interactively
+#% guisection: Authentication
 #%end
 #%option
 #% key: grassdata
@@ -98,28 +93,36 @@
 #% key_desc: directory
 #% description: GRASS Mapset on a remote host
 #%end
-#%option
-#% key: grass_command
-#% type: string
+#%option G_OPT_F_INPUT
+#% key: grass_script
 #% required: yes
-#% key_desc: name
-#% answer: grass70
-#% description: Name or path of a command to run GRASS GIS
+#% multiple: no
+#% description: Path to the input GRASS script
 #%end
 #%option G_OPT_R_INPUTS
-#% key: raster
+#% key: raster_input
 #% required: no
 #% description: Name of input vector map(s) used by GRASS script
+#% guisection: Data
 #%end
 #%option G_OPT_V_INPUTS
-#% key: vector
+#% key: vector_input
 #% required: no
 #% description: Name of input vector map(s) used by GRASS script
+#% guisection: Data
 #%end
 #%option G_OPT_R_OUTPUTS
 #% key: raster_output
 #% required: no
 #% description: Name of output raster map(s) used by GRASS script
+#% guisection: Data
+#%end
+# TODO: G_OPT_V_OUTPUTS does not exist, add it to lib
+#%option G_OPT_V_OUTPUTS
+#% key: vector_output
+#% required: no
+#% description: Name of output vector map(s) used by GRASS script
+#% guisection: Data
 #%end
 #%option
 #% key: backend
@@ -140,6 +143,14 @@
 #% key_desc: path
 #% description: Working directory (path) for the script execution
 #% answer: ~
+#%end
+#%option
+#% key: grass_command
+#% type: string
+#% required: no
+#% key_desc: name
+#% answer: grass70
+#% description: Name or path of a command to run GRASS GIS
 #%end
 
 
@@ -255,25 +266,37 @@ class GrassSession(object):
         self.connection.put(region_file, '/'.join([self.full_mapset, 'windows', region_name]))
         self.run_command('g.region', region=region_name)
 
-    def put_rasters(self, rasters):
-        for raster in rasters:
-            filename = raster + '.rpack'
+    def put_elements(self, elements, pack, unpack, suffix):
+        for name in elements:
+            filename = name + suffix
             gscript.run_command(
-                'r.pack', input=raster, output=filename, overwrite=True)
+                pack, input=name, output=filename, overwrite=True)
             remote_filename = "{dir}/{file}".format(
                 dir=self.directory, file=filename)
             self.connection.put(filename, remote_filename)
-            self.run_command('r.unpack', input=remote_filename, overwrite=True)
+            self.run_command(unpack, input=remote_filename, overwrite=True)
 
-    def get_rasters(self, raster_outputs):
-        for raster in raster_outputs:
-            filename = raster + '.rpack'
+    def get_elements(self, elements, pack, unpack, suffix):
+        for name in elements:
+            filename = name + suffix
             remote_filename = "{dir}/{file}".format(
                 dir=self.directory, file=filename)
-            self.run_command('r.pack', input=raster, output=remote_filename,
+            self.run_command(pack, input=name, output=remote_filename,
                              overwrite=True)
             self.connection.get(remote_filename, filename)
-            gscript.run_command('r.unpack', input=filename, overwrite=True)
+            gscript.run_command(unpack, input=filename, overwrite=True)
+
+    def put_rasters(self, maps):
+        self.put_elements(maps, 'r.pack', 'r.unpack', '.rpack')
+
+    def get_rasters(self, maps):
+        self.get_elements(maps, 'r.pack', 'r.unpack', '.rpack')
+
+    def put_vectors(self, maps):
+        self.put_elements(maps, 'v.pack', 'v.unpack', '.vpack')
+
+    def get_vectors(self, maps):
+        self.get_elements(maps, 'v.pack', 'v.unpack', '.vpack')
 
     # TODO: perhaps we can remove by default? but not removing is faster
     def run_script(self, script, remove=False):
@@ -343,17 +366,21 @@ def main():
     remote_location = options['location']
     remote_mapset = options['mapset']
 
-    rasters = as_list(options['raster'])
+    raster_inputs = as_list(options['raster_input'])
     raster_outputs = as_list(options['raster_output'])
+    vector_inputs = as_list(options['vector_input'])
+    vector_outputs = as_list(options['vector_output'])
 
     session = get_session(options)
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
                             location=remote_location, mapset=remote_mapset,
                             grass_command=options['grass_command'])
     gsession.put_region()
-    gsession.put_rasters(rasters)
+    gsession.put_rasters(raster_inputs)
+    gsession.put_vectors(vector_inputs)
     gsession.run_script(script_path)
     gsession.get_rasters(raster_outputs)
+    gsession.get_vectors(vector_outputs)
     gsession.close()
 
 
