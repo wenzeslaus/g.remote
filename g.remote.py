@@ -23,6 +23,7 @@
 #% keyword: general
 #% keyword: cloud computing
 #% keyword: server
+#% keyword: HPC
 #%end
 #%flag
 #% key: k
@@ -32,7 +33,6 @@
 #% key: server
 #% type: string
 #% required: yes
-#% multiple: no
 #% key_desc: name
 #% description: Name or IP of server (remote host) to be connected
 #%end
@@ -40,7 +40,6 @@
 #% key: port
 #% type: integer
 #% required: no
-#% multiple: no
 #% answer: 22
 #% key_desc: portnum
 #% label: Port on the server used for the connection
@@ -50,7 +49,6 @@
 #% key: user
 #% type: string
 #% required: no
-#% multiple: no
 #% key_desc: name
 #% description: User name
 #% guisection: Authentication
@@ -59,7 +57,6 @@
 #% key: password
 #% type: string
 #% required: no
-#% multiple: no
 #% key_desc: secret
 #% description: User password
 #% guisection: Authentication
@@ -67,9 +64,8 @@
 #%option G_OPT_F_INPUT
 #% key: config
 #% required: no
-#% multiple: no
-#% label: Path to ASCII file containing authentication parameters
-#% description: "-" to pass the parameters interactively
+#% label: Path to text (ASCII) file containing authentication parameters
+#% description: User name and password separated by whitespace
 #% guisection: Authentication
 #%end
 #%option
@@ -175,6 +171,20 @@ def to_ints(dictionary, keys):
             dictionary[key] = int(dictionary[key])
 
 
+def check_config_file(filename):
+    if not os.path.exists(filename):
+        gscript.fatal(_("The file <%s> doesn\'t exist") % filename)
+    if stat.S_IMODE(os.stat(filename).st_mode) != int('0600', 8):
+        gscript.fatal(_("The file permissions of <{config}> are considered"
+                        " insecure.\nPlease correct permissions to read and"
+                        " write only for the current user (mode 600).\n"
+                        " In Linux (unix) command line:\n"
+                        " chmod 600 {config}\n"
+                        " In Python:\n"
+                        " os.chmod('{config}', stat.S_IWRITE | stat.S_IREAD)"
+                        .format(config=filename)))
+
+
 # options could be replaced by individual parameters
 def get_session(options):
     requested_backend = options['backend']
@@ -187,6 +197,26 @@ def get_session(options):
     session = None
     ensure_nones(options, ['port', 'password'])
     to_ints(options, ['port'])
+
+    config_name = options['config']
+    if config_name:
+        gscript.debug("Config file supplied for login")
+        check_config_file(config_name)
+        with open(config_name, 'r') as config_file:
+            config = config_file.read()
+            # split using whitespace
+            # (supposing no spaces in user name and password)
+            values = config.split()
+            if len(values) == 2:
+                gscript.verbose(_("Using values for login from config file"))
+                options['user'] = values[0]
+                options['password'] = values[1]
+            else:
+                gscript.fatal(_("The config file <%s> is not well-formed."
+                                " It should contain user name and password"
+                                " separated by whitespace"
+                                " (newlines, spaces or tabs)" % config_name))
+
     for backend in backends:
         if backend == 'paramiko':
             try:
@@ -360,6 +390,7 @@ def as_list(option):
 
 def main():
     options, flags = gscript.parser()
+
     script_path = options['grass_script']
 
     remote_grassdata = options['grassdata']
