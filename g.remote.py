@@ -25,10 +25,6 @@
 #% keyword: server
 #% keyword: HPC
 #%end
-#%flag
-#% key: k
-#% description: Keep temporary files
-#%end
 #%option
 #% key: server
 #% type: string
@@ -132,13 +128,20 @@
 #% descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package
 #%end
 #%option
-#% key: workdir
+#% key: local_workdir
 #% type: string
 #% required: no
-#% multiple: no
 #% key_desc: path
-#% description: Working directory (path) for the script execution
-#% answer: ~
+#% label: Working directory used to manage temporary files on the local machine
+#% description: Default: current directory [Not implemented, only current directory is supported]
+#%end
+#%option
+#% key: remote_workdir
+#% type: string
+#% required: no
+#% key_desc: path
+#% label: Working directory (path) for the script execution on the remote server
+#% description: Used also to manage temporary files (Default: system temporary directory) [Not implemented, directoryin /tmp with a fixed name is used]
 #%end
 #%option
 #% key: grass_command
@@ -147,6 +150,11 @@
 #% key_desc: name
 #% answer: grass70
 #% description: Name or path of a command to run GRASS GIS
+#%end
+#%flag
+#% key: k
+#% label: Keep temporary files
+#% description: This is useful for debugging [Not implemented, all files are left behind]
 #%end
 
 
@@ -277,17 +285,19 @@ def get_session(options):
 
 
 class GrassSession(object):
-    def __init__(self, connection, grassdata, location, mapset, grass_command):
+    def __init__(self, connection, grassdata, location, mapset,
+                 directory, grass_command):
         self.connection = connection
         self.grass_command = grass_command
         remote_sep = '/'  # path separator on remote host
         self.full_mapset = remote_sep.join(
             [grassdata, location, mapset])
-        unique = "random"
-        self.directory = "/tmp/{dir}".format(dir=unique)
-        directory = "random"
-        directory_path = "/tmp/{dir}".format(dir=directory)
-        self.connection.run('mkdir {dir}'.format(dir=directory_path))
+        if directory:
+            self.directory = directory
+        else:
+            directory = "/tmp/gremote"
+            self.directory = directory
+            self.connection.run('mkdir {dir}'.format(dir=directory))
 
     def put_region(self):
         region_name = 'g_remote_current_region'
@@ -403,9 +413,16 @@ def main():
     vector_outputs = as_list(options['vector_output'])
 
     session = get_session(options)
+
+    if options['local_workdir']:
+        local_workdir = options['local_workdir']
+    else:
+        local_workdir = '.'
+
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
                             location=remote_location, mapset=remote_mapset,
-                            grass_command=options['grass_command'])
+                            grass_command=options['grass_command'],
+                            directory=options['remote_workdir'])
     gsession.put_region()
     gsession.put_rasters(raster_inputs)
     gsession.put_vectors(vector_inputs)
