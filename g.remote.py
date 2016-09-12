@@ -173,18 +173,29 @@ import grass.script as gscript
 
 
 def ensure_nones(dictionary, keys):
+    """Ensure that the specified values are ``None`` if they are not true"""
     for key in keys:
         if not dictionary[key]:
             dictionary[key] = None
 
 
 def to_ints(dictionary, keys):
+    """Convert specified values to ``int``"""
     for key in keys:
         if dictionary[key]:
             dictionary[key] = int(dictionary[key])
 
 
+def as_list(option):
+    """Convert "option multiple" to a list"""
+    if option:
+        return option.split(',')
+    else:
+        return []
+
+
 def check_config_file(filename):
+    """Check if config file exists and has expected permissions"""
     if not os.path.exists(filename):
         gscript.fatal(_("The file <%s> doesn\'t exist") % filename)
     if stat.S_IMODE(os.stat(filename).st_mode) != int('0600', 8):
@@ -200,6 +211,7 @@ def check_config_file(filename):
 
 # options could be replaced by individual parameters
 def get_session(options):
+    """Based on a dictionary and available backends create a remote session"""
     requested_backend = options['backend']
     if requested_backend:
         backends = [requested_backend]
@@ -262,10 +274,11 @@ def get_session(options):
         elif backend == 'pexpect':
             try:
                 from pexpectssh import SshSession as Connection
+                # TODO: support port (or warn it's missing)
                 session = Connection(
                     user=options['user'], host=options['server'],
                     logfile='gcloudsshiface.log', verbose=1,
-                    password=options['password'], port=options['port'])
+                    password=options['password'])
                 gscript.verbose(_("Using Pexpect (with ssh and scp) backend"))
                 break
             except ImportError as error:
@@ -294,6 +307,7 @@ def get_session(options):
 
 
 class GrassSession(object):
+    """Connection to a remote GRASS GIS session"""
     def __init__(self, connection, grassdata, location, mapset,
                  directory, grass_command):
         self.connection = connection
@@ -311,27 +325,32 @@ class GrassSession(object):
         else:
             directory = "/tmp/gremote"
             self.directory = directory
+            # TODO: implement connection.mkdir (duplicate os or shutils names)
             self.connection.run('mkdir {dir}'.format(dir=directory))
 
     def create_location(self):
+        """Create a Location on a remote server"""
         # TODO: remove location
         # create remote directories
         self.connection.run('mkdir {dir}'.format(dir=self.full_location))
         self.connection.run('mkdir {dir}'.format(dir=self.full_permanent))
         # copy the files
-        path = gscript.read_command('g.gisenv', get="GISDBASE,LOCATION_NAME", separator="/").strip()
+        path = gscript.read_command('g.gisenv', get="GISDBASE,LOCATION_NAME",
+                                    separator="/").strip()
         path = os.path.join(path, "PERMANENT")
-        for file in ['DEFAULT_WIND', 'MYNAME', 'PROJ_EPSG', 'PROJ_INFO', 'PROJ_UNITS']:
+        for file in ['DEFAULT_WIND', 'MYNAME', 'PROJ_EPSG',
+                     'PROJ_INFO', 'PROJ_UNITS']:
             local = os.path.join(path, file)
-            remote = self.remote_sep.join([self.full_location, 'PERMANENT', file])
-            print local.__repr__()
-            print remote.__repr__()
+            remote = self.remote_sep.join([self.full_location,
+                                           'PERMANENT', file])
             self.connection.put(local, remote)
         # if location is new, then mapset does not exist
         self.connection.run('{grass} -text {mapset} -c -e'.format(
-                mapset=self.full_mapset, grass=self.grass_command))
+            mapset=self.full_mapset, grass=self.grass_command))
+        # TODO: implement self.run_grass
 
     def put_region(self):
+        """Set the remote region to the current region"""
         region_name = 'g_remote_current_region'
         # TODO: remove the region
         gscript.run_command('g.region', save=region_name, overwrite=True)
@@ -343,6 +362,16 @@ class GrassSession(object):
         self.run_command('g.region', region=region_name)
 
     def put_elements(self, elements, pack, unpack, suffix):
+        """Copy each element to the server
+
+        The pack module needs to accept input.
+        The unpack module needs to accept input and output.
+
+        :param elements: list of element names
+        :param pack: module to pack the element
+        :param unpack: module to unpack the element
+        :param suffix: file suffix to use
+        """
         for name in elements:
             filename = name + suffix
             gscript.run_command(
@@ -353,6 +382,10 @@ class GrassSession(object):
             self.run_command(unpack, input=remote_filename, overwrite=True)
 
     def get_elements(self, elements, pack, unpack, suffix):
+        """Copy each element from the server
+
+        Complementary with put_elements().
+        """
         for name in elements:
             filename = name + suffix
             remote_filename = "{dir}/{file}".format(
@@ -363,20 +396,26 @@ class GrassSession(object):
             gscript.run_command(unpack, input=filename, overwrite=True)
 
     def put_rasters(self, maps):
+        """Copy raster maps to server"""
         self.put_elements(maps, 'r.pack', 'r.unpack', '.rpack')
 
     def get_rasters(self, maps):
+        """Copy raster maps from server"""
         self.get_elements(maps, 'r.pack', 'r.unpack', '.rpack')
 
     def put_vectors(self, maps):
+        """Copy vector maps to server"""
         self.put_elements(maps, 'v.pack', 'v.unpack', '.vpack')
 
     def get_vectors(self, maps):
+        """Copy vector maps from server"""
         self.get_elements(maps, 'v.pack', 'v.unpack', '.vpack')
 
     # TODO: perhaps we can remove by default? but not removing is faster
     def run_script(self, script, remove=False):
-        """
+        """Run script on the server
+
+        :param script: path to a local file
         :param remove: remove file on a remote after execution
         """
         script_path = script
@@ -393,6 +432,10 @@ class GrassSession(object):
             self.connection.run('rm {file}'.format(file=remote_script_path))
 
     def run_code(self, code):
+        """Run piece of Python code on the server
+
+        Some imports are provided.
+        """
         # TODO: io requires unicode but we should be able to accept str and unicode
         script_name = 'pack_script.py'
         script = io.open(script_name, 'w', newline='')
@@ -400,8 +443,8 @@ class GrassSession(object):
         script.write(u"#!/usr/bin/env python\n")
         script.write(u"import grass.script as gscript\n")
 
-        if (not isinstance(code, str) and not isinstance(code, str)
-           and isinstance(code, Iterable)):
+        if (not isinstance(code, str) and not isinstance(code, str) and
+           isinstance(code, Iterable)):
             for line in code:
                 script.write(unicode(line + '\n'))
         else:
@@ -411,7 +454,10 @@ class GrassSession(object):
         os.remove(script_name)
 
     def run_command(self, *args, **kwargs):
+        """Run a module with given parameters on the server"""
         # TODO: perhaps PyGRASS would be appropriate here
+        # TODO: for 7.2 and higher, it could use --exec and skip Python
+        # TODO: parameters for accumulating commands and executing all at once
         parameters = ["'%s'" % str(arg) for arg in args]
         for opt, val in kwargs.iteritems():
             if "'" in str(val):
@@ -424,17 +470,12 @@ class GrassSession(object):
         self.run_code(code)
 
     def close(self):
+        """Finish the connection"""
         self.connection.run('rm -r {dir}'.format(dir=self.directory))
 
 
-def as_list(option):
-    if option:
-        return option.split(',')
-    else:
-        return []
-
-
 def main():
+    # TODO: allow a last section of the command line be a command (like --exec)
     options, flags = gscript.parser()
 
     script_path = options['grass_script']
@@ -450,9 +491,11 @@ def main():
 
     session = get_session(options)
 
+    # TODO: use variable, e.g. for packing
     if options['local_workdir']:
         local_workdir = options['local_workdir']
     else:
+        # TODO: this should be tmp
         local_workdir = '.'
 
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
