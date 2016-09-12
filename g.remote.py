@@ -225,6 +225,10 @@ def get_session(options):
                                 " separated by whitespace"
                                 " (newlines, spaces or tabs)" % config_name))
 
+    # get access to wrappers
+    from grass.pygrass.utils import set_path
+    set_path('g.remote')
+
     for backend in backends:
         if backend == 'paramiko':
             try:
