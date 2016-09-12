@@ -156,6 +156,11 @@
 #% label: Keep temporary files
 #% description: This is useful for debugging [Not implemented, all files are left behind]
 #%end
+#%flag
+#% key: l
+#% label: Create the remote Location
+#% description: Copy the location to the remote server
+#%end
 
 
 import os
@@ -293,9 +298,14 @@ class GrassSession(object):
                  directory, grass_command):
         self.connection = connection
         self.grass_command = grass_command
-        remote_sep = '/'  # path separator on remote host
-        self.full_mapset = remote_sep.join(
+        # TODO: path.join method as part of connection
+        self.remote_sep = '/'  # path separator on remote host
+        self.full_location = self.remote_sep.join(
+            [grassdata, location])
+        self.full_mapset = self.remote_sep.join(
             [grassdata, location, mapset])
+        self.full_permanent = self.remote_sep.join(
+            [grassdata, location, "PERMANENT"])
         if directory:
             self.directory = directory
         else:
@@ -303,10 +313,30 @@ class GrassSession(object):
             self.directory = directory
             self.connection.run('mkdir {dir}'.format(dir=directory))
 
+    def create_location(self):
+        # TODO: remove location
+        # create remote directories
+        self.connection.run('mkdir {dir}'.format(dir=self.full_location))
+        self.connection.run('mkdir {dir}'.format(dir=self.full_permanent))
+        # copy the files
+        path = gscript.read_command('g.gisenv', get="GISDBASE,LOCATION_NAME", separator="/").strip()
+        path = os.path.join(path, "PERMANENT")
+        for file in ['DEFAULT_WIND', 'MYNAME', 'PROJ_EPSG', 'PROJ_INFO', 'PROJ_UNITS']:
+            local = os.path.join(path, file)
+            remote = self.remote_sep.join([self.full_location, 'PERMANENT', file])
+            print local.__repr__()
+            print remote.__repr__()
+            self.connection.put(local, remote)
+        # if location is new, then mapset does not exist
+        self.connection.run('{grass} -text {mapset} -c -e'.format(
+                mapset=self.full_mapset, grass=self.grass_command))
+
     def put_region(self):
         region_name = 'g_remote_current_region'
+        # TODO: remove the region
         gscript.run_command('g.region', save=region_name, overwrite=True)
         region_file = gscript.find_file(region_name, element='windows')['file']
+        # TODO: create a directory if does not exist
         self.connection.put(region_file, '/'.join([self.full_mapset, 'windows', region_name]))
         self.run_command('g.region', region=region_name)
 
@@ -427,6 +457,8 @@ def main():
                             location=remote_location, mapset=remote_mapset,
                             grass_command=options['grass_command'],
                             directory=options['remote_workdir'])
+    if flags['l']:
+        gsession.create_location()
     gsession.put_region()
     gsession.put_rasters(raster_inputs)
     gsession.put_vectors(vector_inputs)
