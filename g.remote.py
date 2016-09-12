@@ -250,9 +250,9 @@ def get_session(options):
         elif backend == 'simple':
             try:
                 from simplessh import SshConnection as Connection
+                # TODO: support password and port (or warn they are missing)
                 session = Connection(
-                    user=options['user'], host=options['server'],
-                    password=options['password'], port=options['port'])
+                    user=options['user'], host=options['server'])
                 gscript.verbose(_("Using simple (ssh and scp) backend"))
                 break
             except ImportError as error:
