@@ -336,8 +336,10 @@ class GrassSession(object):
         # TODO: remove the region
         gscript.run_command('g.region', save=region_name, overwrite=True)
         region_file = gscript.find_file(region_name, element='windows')['file']
-        # TODO: create a directory if does not exist
-        self.connection.put(region_file, '/'.join([self.full_mapset, 'windows', region_name]))
+        remote_dir = '/'.join([self.full_mapset, 'windows'])
+        remote_file = '/'.join([remote_dir, region_name])
+        self.connection.run('mkdir {dir}'.format(dir=remote_dir))
+        self.connection.put(region_file, remote_file)
         self.run_command('g.region', region=region_name)
 
     def put_elements(self, elements, pack, unpack, suffix):
