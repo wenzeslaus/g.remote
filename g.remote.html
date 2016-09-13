@@ -1,6 +1,25 @@
 <h2>DESCRIPTION</h2>
 
-<em>g.remote</em>
+<em>g.remote</em> executes scripts on a remote server.
+The current functionality allows user to run a script or a command on
+a remote machine in a synchronous mode (when user waits for the result).
+
+<p>
+The module is able to upload and download data specified by the user
+and create Location on the remote machine or use one
+which matches the projection of the current Location on the local machine.
+
+<p>
+The server is expected to have an SSH server with configuration which
+allows the user to connect to it.
+Further, it may be expected that the server has the same version of
+GRASS GIS with the same modules as the local machine (e.g. modules
+from the Addons repository). This is not enforced but user should
+keep this in mind when dealing with issues or unusual configurations.
+Finally, when not creating the remote Location, the Location which
+the module uses is expected to have the same projection (CRS) as the
+current Location. This is currently not enforced.
+
 
 <h3>The exec parameter syntax</h3>
 
@@ -14,6 +33,7 @@ g.remote ... exec="g.region -p"
 The value of the parameter is used as a command which is executed
 a remote server. The individual parameters are separated using Python
 <em>shlex</em> library with default settings which is POSIX parsing rules.
+This was works in the command line, Python and the GUI.
 
 <p>
 For user convenience, two additional options are provided. First, user
