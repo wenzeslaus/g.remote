@@ -223,6 +223,9 @@ def get_session(options):
     ensure_nones(options, ['port', 'password'])
     to_ints(options, ['port'])
 
+    # TODO: provide a flag (or default) for reading the file or params
+    # from some standardized location or variable (so we have shorter
+    # command lines)
     config_name = options['config']
     if config_name:
         gscript.debug("Config file supplied for login")
@@ -418,6 +421,7 @@ class GrassSession(object):
         :param script: path to a local file
         :param remove: remove file on a remote after execution
         """
+        # TODO: make script results visible or hidden
         script_path = script
         script_name = os.path.basename(script_path)
         remote_script_path = "{dir}/{script}".format(
@@ -437,6 +441,7 @@ class GrassSession(object):
         Some imports are provided.
         """
         # TODO: io requires unicode but we should be able to accept str and unicode
+        # TODO randomize the name but keep it informative (add start of code)
         script_name = 'pack_script.py'
         script = io.open(script_name, 'w', newline='')
 
@@ -469,6 +474,34 @@ class GrassSession(object):
         code = "gscript.run_command(%s)\n" % ', '.join(parameters)
         self.run_code(code)
 
+    def run_bash_code(self, code):
+        """Run piece of Bash code on the server"""
+        # TODO: io requires unicode but we should be able to accept str and unicode
+        # TODO randomize the name but keep it informative (add start of code)
+        script_name = 'pack_script.sh'
+        script = io.open(script_name, 'w', newline='')
+
+        script.write(u"#!/usr/bin/env bash\n")
+
+        # TODO: share some code with Python function
+        if (not isinstance(code, str) and not isinstance(code, str) and
+           isinstance(code, Iterable)):
+            for line in code:
+                script.write(unicode(line + '\n'))
+        else:
+            script.write(unicode(code))
+        script.close()
+        self.run_script(script_name, remove=True)
+        os.remove(script_name)
+
+    def run_bash_command(self, command):
+        """Run a bash command provided as list"""
+        # TODO: perhaps PyGRASS would be appropriate here
+        # TODO: for 7.2 and higher, it could use --exec and skip script
+        # TODO: parameters for accumulating commands and executing all at once
+        code = ["'%s'" % str(arg) for arg in command]
+        self.run_bash_code(" ".join(code))
+
     def close(self):
         """Finish the connection"""
         self.connection.run('rm -r {dir}'.format(dir=self.directory))
@@ -479,7 +512,9 @@ def main():
     options, flags = gscript.parser()
 
     script_path = options['grass_script']
+    # TODO: read script from stdin
 
+    # TODO: support creating grassdata in a tmp place
     remote_grassdata = options['grassdata']
     remote_location = options['location']
     remote_mapset = options['mapset']
@@ -498,6 +533,7 @@ def main():
         # TODO: this should be tmp
         local_workdir = '.'
 
+    # TODO: default grass binary should be derived from the version we are running
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
                             location=remote_location, mapset=remote_mapset,
                             grass_command=options['grass_command'],
