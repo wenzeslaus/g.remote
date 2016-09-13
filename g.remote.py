@@ -87,9 +87,16 @@
 #%end
 #%option G_OPT_F_INPUT
 #% key: grass_script
-#% required: yes
+#% required: no
 #% multiple: no
 #% description: Path to the input GRASS script
+#%end
+#%option
+#% key: exec
+#% type: string
+#% required: no
+#% key_desc: command
+#% description: Module or command to execute
 #%end
 #%option G_OPT_R_INPUTS
 #% key: raster_input
@@ -160,6 +167,9 @@
 #% key: l
 #% label: Create the remote Location
 #% description: Copy the location to the remote server
+#%end
+#%rules
+#% required: grass_script,exec
 #%end
 
 
@@ -507,8 +517,51 @@ class GrassSession(object):
         self.connection.run('rm -r {dir}'.format(dir=self.directory))
 
 
+def preparse_exec():
+    """Extract exec part of the command if present and fix ``sys.argv``
+
+    Returns the command to execute as a list or None.
+    Modifies ``sys.argv`` for GRASS parser if needed.
+    """
+    split_parser = 'exec='  # magic parameter to split for parser syntax
+    split_parameter = '--exec'  # magic parameter to split for grass72 syntax
+    single_command = None
+    use_parser = False
+
+    for i, arg in enumerate(sys.argv):
+        if arg.startswith(split_parser):
+            use_parser = True
+            split_at = i
+            break
+    if use_parser:
+        # ...exec="g.region -p"... or ...exec=g.region -p
+        exec_value = sys.argv[split_at].split("=")[1]
+        if " " in exec_value:  # is not module name
+            # exec is a whole command, this code could be also somewhere
+            # later on but we need the other tests anyway, after this
+            # we just use normal parser
+            import shlex
+            single_command = shlex.split(exec_value)
+        else:
+            # exec is just the module name
+            single_command = sys.argv[split_at + 1:]
+            single_command.insert(0, exec_value)
+            # remove additional parameters
+            # but leave the required there
+            sys.argv = sys.argv[:split_at + 1]
+    elif split_parameter in sys.argv:
+        # ...--exec g.region -p
+        split_at = sys.argv.index(split_parameter)
+        single_command = sys.argv[split_at + 1:]
+        sys.argv = sys.argv[:split_at]
+        # remove additional parameters
+        # and pretend user provided the required parameters
+        sys.argv.append(split_parser + single_command[0])
+    return single_command
+
+
 def main():
-    # TODO: allow a last section of the command line be a command (like --exec)
+    single_command = preparse_exec()
     options, flags = gscript.parser()
 
     script_path = options['grass_script']
@@ -543,7 +596,11 @@ def main():
     gsession.put_region()
     gsession.put_rasters(raster_inputs)
     gsession.put_vectors(vector_inputs)
-    gsession.run_script(script_path)
+    if script_path:
+        gsession.run_script(script_path)
+    elif single_command:
+        gsession.run_bash_command(single_command)
+    # TODO: add also Python code as an input
     gsession.get_rasters(raster_outputs)
     gsession.get_vectors(vector_outputs)
     gsession.close()
