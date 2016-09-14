@@ -31,9 +31,10 @@ import grass.script as gscript
 class GrassSession(object):
     """Connection to a remote GRASS GIS session"""
     def __init__(self, connection, grassdata, location, mapset,
-                 directory, grass_command):
+                 directory, grass_command, grass_version):
         self.connection = connection
         self.grass_command = grass_command
+        self.grass_version = grass_version
         # TODO: path.join method as part of connection
         self.remote_sep = '/'  # path separator on remote host
         self.full_location = self.remote_sep.join(
@@ -147,10 +148,16 @@ class GrassSession(object):
             dir=self.directory, script=script_name)
         self.connection.put(script_path, remote_script_path)
         self.connection.chmod(remote_script_path, stat.S_IRWXU)
-        self.connection.run(
-            'GRASS_BATCH_JOB={script} {grass} -text {mapset}'.format(
-                script=remote_script_path, mapset=self.full_mapset,
-                grass=self.grass_command))
+        if not self.grass_version or self.grass_version < 720:
+            self.connection.run(
+                'GRASS_BATCH_JOB={script} {grass} -text {mapset}'.format(
+                    script=remote_script_path, mapset=self.full_mapset,
+                    grass=self.grass_command))
+        else:
+            self.connection.run(
+                '{grass} -text {mapset} --exec {script}'.format(
+                    script=remote_script_path, mapset=self.full_mapset,
+                    grass=self.grass_command))
         if remove:
             self.connection.run('rm {file}'.format(file=remote_script_path))
 

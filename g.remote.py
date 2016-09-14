@@ -155,8 +155,15 @@
 #% type: string
 #% required: no
 #% key_desc: name
-#% answer: grass70
+#% answer: grass7
 #% description: Name or path of a command to run GRASS GIS
+#%end
+#%option
+#% key: grass_version
+#% type: string
+#% required: no
+#% key_desc: name
+#% description: Version of GRASS GIS used remotely
 #%end
 #%flag
 #% key: k
@@ -373,6 +380,19 @@ def preparse_exec():
     return single_command
 
 
+# TODO: more robust handling, now format ###, e.g. 700, required
+# TODO: acquire automatically when not provided
+def version_to_number(string):
+    if string:
+        return int(string)
+    else:
+        return None
+
+
+# TODO: what happens to the processes when we interrupt the module
+# or the connection is broken? Seems that they are running, that might
+# be advantageous but not always desired. (controlled processing
+# without connection as in g.cloud would be another level)
 def main():
     single_command = preparse_exec()
     options, flags = gscript.parser()
@@ -390,6 +410,8 @@ def main():
     vector_inputs = as_list(options['vector_input'])
     vector_outputs = as_list(options['vector_output'])
 
+    grass_version = version_to_number(options['grass_version'])
+
     session = get_session(options)
 
     # TODO: use variable, e.g. for packing
@@ -404,6 +426,7 @@ def main():
     gsession = GrassSession(connection=session, grassdata=remote_grassdata,
                             location=remote_location, mapset=remote_mapset,
                             grass_command=options['grass_command'],
+                            grass_version=grass_version,
                             directory=options['remote_workdir'])
     if flags['l']:
         gsession.create_location()

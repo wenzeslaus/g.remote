@@ -48,6 +48,7 @@ class SshConnection(object):
 
     def run(self, command):
         """Exectute command on a remote machine"""
+        # here we pass command as one string
         return self._exec(['ssh', '-l', self.user, self.host, command])
 
     def put(self, localpath, remotepath):
