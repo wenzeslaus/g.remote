@@ -2,7 +2,7 @@ MODULE_TOPDIR = ../..
 
 PGM = g.remote
 
-ETCFILES = friendlyssh pexpectssh simplessh
+ETCFILES = friendlyssh pexpectssh simplessh grasssession
 
 include $(MODULE_TOPDIR)/include/Make/Script.make
 include $(MODULE_TOPDIR)/include/Make/Python.make
