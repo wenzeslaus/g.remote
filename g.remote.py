@@ -131,8 +131,8 @@
 #% key_desc: name
 #% label: Backend to be used for connection to the remote machine (server)
 #% description: The main difference between various backends are their dependencies. By default an appropriate backend is selected automatically.
-#% options: simple,pexpect,paramiko
-#% descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package
+#% options: simple,pexpect,paramiko,local
+#% descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package;local;Backend which works on local machine
 #%end
 #%option
 #% key: local_workdir
@@ -296,6 +296,17 @@ def get_session(options):
                 break
             except ImportError as error:
                 gscript.verbose(_("Tried Pexpect (ssh, scp and pexpect)"
+                                  " backend but it is not available"
+                                  " (%s)" % error))
+                continue
+        elif backend == 'local':
+            try:
+                from localsession import LocalConnection as Connection
+                session = Connection()
+                gscript.verbose(_("Using local host backend"))
+                break
+            except ImportError as error:
+                gscript.verbose(_("Tried local host"
                                   " backend but it is not available"
                                   " (%s)" % error))
                 continue
