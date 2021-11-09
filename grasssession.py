@@ -202,7 +202,7 @@ class GrassSession(object):
         # TODO: for 7.2 and higher, it could use --exec and skip Python
         # TODO: parameters for accumulating commands and executing all at once
         parameters = ["'%s'" % str(arg) for arg in args]
-        for opt, val in kwargs.iteritems():
+        for opt, val in kwargs.items():
             if "'" in str(val):
                 quote = '"'
             else:
