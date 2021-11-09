@@ -39,13 +39,14 @@ class Connection(object):
     """Connects and logs into the specified hostname.
     Arguments that are not given are guessed from the environment."""
 
-    def __init__(self,
-                 host,
-                 username=None,
-                 private_key=None,
-                 password=None,
-                 port=22,
-                 ):
+    def __init__(
+        self,
+        host,
+        username=None,
+        private_key=None,
+        password=None,
+        port=22,
+    ):
 
         self._sftp_live = False
         self._sftp = None
@@ -53,9 +54,13 @@ class Connection(object):
         self._client = paramiko.SSHClient()
         self._client.load_system_host_keys()
         self._client.set_missing_host_key_policy(paramiko.client.WarningPolicy())
-        self._client.connect(hostname=host, port=port,
-                             username=username, password=password,
-                             key_filename=private_key)
+        self._client.connect(
+            hostname=host,
+            port=port,
+            username=username,
+            password=password,
+            key_filename=private_key,
+        )
         self._transport = self._client.get_transport()
         self._tranport_live = True
 
@@ -87,8 +92,7 @@ class Connection(object):
         self._sftp_connect()
         for i in self._sftp.listdir(remotepath):
             try:
-                self._sftp.get("%s/%s" % (remotepath, i),
-                               "%s/%s" % (localpath, i))
+                self._sftp.get("%s/%s" % (remotepath, i), "%s/%s" % (localpath, i))
             except IOError as error:
                 self.log.warn("unable to recover item '%s'" % i)
 
@@ -108,8 +112,8 @@ class Connection(object):
         """Execute the given commands on a remote machine."""
         channel = self._transport.open_session()
         channel.exec_command(command)
-        stdout = channel.makefile('rb', -1)
-        stderr = channel.makefile_stderr('rb', -1)
+        stdout = channel.makefile("rb", -1)
+        stderr = channel.makefile_stderr("rb", -1)
         if stderr:
             # shutil.copyfileobj
             sys.stdout.write(stdout.read())

@@ -9,4 +9,4 @@ Created on Mon Apr  6 12:52:28 2015
 
 import grass.script as gscript
 
-gscript.run_command('g.list', type='raster,vector', flags='p')
+gscript.run_command("g.list", type="raster,vector", flags="p")

@@ -27,6 +27,7 @@ class SshConnection(object):
 
     This class currenly does authentication using keys only.
     """
+
     def __init__(self, user, host):
         """
         :param user: user name on a remote machine
@@ -49,19 +50,19 @@ class SshConnection(object):
     def run(self, command):
         """Exectute command on a remote machine"""
         # here we pass command as one string
-        return self._exec(['ssh', '-l', self.user, self.host, command])
+        return self._exec(["ssh", "-l", self.user, self.host, command])
 
     def put(self, localpath, remotepath):
         """Copy file from local machine to remote machine"""
-        return self._exec(['scp',
-                           localpath,
-                           '%s@%s:%s' % (self.user, self.host, remotepath)])
+        return self._exec(
+            ["scp", localpath, "%s@%s:%s" % (self.user, self.host, remotepath)]
+        )
 
     def get(self, remotepath, localpath):
         """Copy file from remote machine to local machine"""
-        return self._exec(['scp',
-                           '%s@%s:%s' % (self.user, self.host, remotepath),
-                           localpath])
+        return self._exec(
+            ["scp", "%s@%s:%s" % (self.user, self.host, remotepath), localpath]
+        )
 
     def chmod(self, path, mode):
         """Change permission (mode) of a remote file or directory
@@ -70,5 +71,4 @@ class SshConnection(object):
 
         :param mode: permissions defined in stat package
         """
-        return self.run("chmod {mode} {path}".format(
-            path=path, mode=oct(mode)))
+        return self.run("chmod {mode} {path}".format(path=path, mode=oct(mode)))

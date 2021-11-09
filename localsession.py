@@ -27,8 +27,9 @@ class LocalConnection(object):
     This operates on the localhost but provides unified interface with
     the remote connection classes.
     """
+
     def __init__(self):
-        """"""
+        """ """
         pass
 
     def _exec(self, command):
@@ -45,11 +46,11 @@ class LocalConnection(object):
 
     def put(self, localpath, remotepath):
         """Copy file from local machine to remote machine"""
-        return self._exec(['cp', localpath, remotepath])
+        return self._exec(["cp", localpath, remotepath])
 
     def get(self, remotepath, localpath):
         """Copy file from remote machine to local machine"""
-        return self._exec(['cp', remotepath, localpath])
+        return self._exec(["cp", remotepath, localpath])
 
     def chmod(self, path, mode):
         """Change permission (mode) of a remote file or directory
@@ -58,5 +59,4 @@ class LocalConnection(object):
 
         :param mode: permissions defined in stat package
         """
-        return self.run("chmod {mode} {path}".format(
-            path=path, mode=oct(mode)))
+        return self.run("chmod {mode} {path}".format(path=path, mode=oct(mode)))
