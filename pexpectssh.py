@@ -23,9 +23,9 @@
 # The SSH wrapper was derived from ssh_session.py
 # example which is or was part of Pexpect (https://github.com/pexpect/pexpect).
 #
-# The original file can be found in this repository (under MIT license):
+# The original file can be found in this repository (under the MIT license):
 # http://opensource.apple.com/source/lldb/lldb-112/test/pexpect-2.4/
-# Note that the code is now relicensed under GNU GPL as MIT license allows.
+# Note that the code is now relicensed under GNU GPL as the MIT license allows.
 
 
 import pexpect
@@ -57,7 +57,7 @@ class SshSession(object):
         self.password = password
         self.logfile_name = logfile
         self.openagent = False
-        # keys for pexpect to expect when commands are exectued
+        # keys for pexpect to expect when commands are executed
         self.keys = [
             "authenticity",
             "password:",

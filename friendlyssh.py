@@ -20,13 +20,13 @@
 # Original Friendly Python SSH2 interface file
 #
 # The original file can be found in this repository (under LGPL license,
-# original author probably unknown, original probabaly Public Domain or
-# something permisive, zoink-sftp maintainer Oisin Mulvihill):
+# original author probably unknown, original probably Public Domain or
+# something permissive, zoink-sftp maintainer Oisin Mulvihill):
 # http://bazaar.launchpad.net/~oisin-mulvihill/zoink-sftp/trunk/view/head:/lib/zoinksftp/ssh.py
 # There are different versions of this file online with slight differences:
 # http://cloudwizard.googlecode.com/svn-history/r36/trunk/cloudwizard/ssh.py
 # http://media.commandline.org.uk/code/ssh.txt
-# Note that this code is now relicensed and is under GNU GPL.
+# Note that this code is now relicensed under GNU GPL.
 
 
 import os
