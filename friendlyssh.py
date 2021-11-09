@@ -94,7 +94,11 @@ class Connection(object):
             try:
                 self._sftp.get("%s/%s" % (remotepath, i), "%s/%s" % (localpath, i))
             except IOError as error:
-                self.log.warn("unable to recover item '%s'" % i)
+                self.log.warn(
+                    "unable to recover item '{item}': {error}".format(
+                        item=i, error=error
+                    )
+                )
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""
@@ -136,7 +140,7 @@ class Connection(object):
         try:
             self.close()
 
-        except AttributeError as error:
+        except AttributeError:
             # Usually raised if close was called before this was
             # garbage collected.
             pass

@@ -103,7 +103,8 @@ class SshSession(object):
             sys.stderr.write("<- " + child.before + "|\n")
         try:
             self.logfile.write(str(child.before) + str(child.after) + "\n")
-        except:
+        except Exception:
+            # Ignoring logging errors and access errors during logging.
             pass
         # self.logfile.close()
         return child.before
