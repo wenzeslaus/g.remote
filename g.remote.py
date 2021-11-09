@@ -18,166 +18,166 @@
 #
 ############################################################################
 
-#%module
-#% description: Exectues processes in GRASS GIS session on a server
-#% keyword: general
-#% keyword: cloud computing
-#% keyword: server
-#% keyword: HPC
-#%end
-#%option
-#% key: server
-#% type: string
-#% required: yes
-#% key_desc: name
-#% description: Name or IP of server (remote host) to be connected
-#%end
-#%option
-#% key: port
-#% type: integer
-#% required: no
-#% answer: 22
-#% key_desc: portnum
-#% label: Port on the server used for the connection
-#% description: If you don't know it, then the default value is probably fine.
-#%end
-#%option
-#% key: user
-#% type: string
-#% required: no
-#% key_desc: name
-#% description: User name
-#% guisection: Authentication
-#%end
-#%option
-#% key: password
-#% type: string
-#% required: no
-#% key_desc: secret
-#% description: User password
-#% guisection: Authentication
-#%end
-#%option G_OPT_F_INPUT
-#% key: config
-#% required: no
-#% label: Path to text (ASCII) file containing authentication parameters
-#% description: User name and password separated by whitespace
-#% guisection: Authentication
-#%end
-#%option
-#% key: grassdata
-#% type: string
-#% required: yes
-#% key_desc: directory
-#% description: Path to GRASS Database directory on a remote host
-#%end
-#%option
-#% key: location
-#% type: string
-#% required: yes
-#% key_desc: directory
-#% description: GRASS Location on a remote host
-#%end
-#%option
-#% key: mapset
-#% type: string
-#% required: yes
-#% key_desc: directory
-#% description: GRASS Mapset on a remote host
-#%end
-#%option G_OPT_F_INPUT
-#% key: grass_script
-#% required: no
-#% multiple: no
-#% description: Path to the input GRASS script
-#%end
-#%option
-#% key: exec
-#% type: string
-#% required: no
-#% key_desc: command
-#% description: Module or command to execute
-#%end
-#%option G_OPT_R_INPUTS
-#% key: raster_input
-#% required: no
-#% description: Name of input vector map(s) used by GRASS script
-#% guisection: Data
-#%end
-#%option G_OPT_V_INPUTS
-#% key: vector_input
-#% required: no
-#% description: Name of input vector map(s) used by GRASS script
-#% guisection: Data
-#%end
-#%option G_OPT_R_OUTPUTS
-#% key: raster_output
-#% required: no
-#% description: Name of output raster map(s) used by GRASS script
-#% guisection: Data
-#%end
+# %module
+# % description: Exectues processes in GRASS GIS session on a server
+# % keyword: general
+# % keyword: cloud computing
+# % keyword: server
+# % keyword: HPC
+# %end
+# %option
+# % key: server
+# % type: string
+# % required: yes
+# % key_desc: name
+# % description: Name or IP of server (remote host) to be connected
+# %end
+# %option
+# % key: port
+# % type: integer
+# % required: no
+# % answer: 22
+# % key_desc: portnum
+# % label: Port on the server used for the connection
+# % description: If you don't know it, then the default value is probably fine.
+# %end
+# %option
+# % key: user
+# % type: string
+# % required: no
+# % key_desc: name
+# % description: User name
+# % guisection: Authentication
+# %end
+# %option
+# % key: password
+# % type: string
+# % required: no
+# % key_desc: secret
+# % description: User password
+# % guisection: Authentication
+# %end
+# %option G_OPT_F_INPUT
+# % key: config
+# % required: no
+# % label: Path to text (ASCII) file containing authentication parameters
+# % description: User name and password separated by whitespace
+# % guisection: Authentication
+# %end
+# %option
+# % key: grassdata
+# % type: string
+# % required: yes
+# % key_desc: directory
+# % description: Path to GRASS Database directory on a remote host
+# %end
+# %option
+# % key: location
+# % type: string
+# % required: yes
+# % key_desc: directory
+# % description: GRASS Location on a remote host
+# %end
+# %option
+# % key: mapset
+# % type: string
+# % required: yes
+# % key_desc: directory
+# % description: GRASS Mapset on a remote host
+# %end
+# %option G_OPT_F_INPUT
+# % key: grass_script
+# % required: no
+# % multiple: no
+# % description: Path to the input GRASS script
+# %end
+# %option
+# % key: exec
+# % type: string
+# % required: no
+# % key_desc: command
+# % description: Module or command to execute
+# %end
+# %option G_OPT_R_INPUTS
+# % key: raster_input
+# % required: no
+# % description: Name of input vector map(s) used by GRASS script
+# % guisection: Data
+# %end
+# %option G_OPT_V_INPUTS
+# % key: vector_input
+# % required: no
+# % description: Name of input vector map(s) used by GRASS script
+# % guisection: Data
+# %end
+# %option G_OPT_R_OUTPUTS
+# % key: raster_output
+# % required: no
+# % description: Name of output raster map(s) used by GRASS script
+# % guisection: Data
+# %end
 # TODO: G_OPT_V_OUTPUTS does not exist, add it to lib
-#%option G_OPT_V_OUTPUTS
-#% key: vector_output
-#% required: no
-#% description: Name of output vector map(s) used by GRASS script
-#% guisection: Data
-#%end
-#%option
-#% key: backend
-#% type: string
-#% required: no
-#% multiple: no
-#% key_desc: name
-#% label: Backend to be used for connection to the remote machine (server)
-#% description: The main difference between various backends are their dependencies. By default an appropriate backend is selected automatically.
-#% options: simple,pexpect,paramiko,local
-#% descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package;local;Backend which works on local machine
-#%end
-#%option
-#% key: local_workdir
-#% type: string
-#% required: no
-#% key_desc: path
-#% label: Working directory used to manage temporary files on the local machine
-#% description: Default: current directory [Not implemented, only current directory is supported]
-#%end
-#%option
-#% key: remote_workdir
-#% type: string
-#% required: no
-#% key_desc: path
-#% label: Working directory (path) for the script execution on the remote server
-#% description: Used also to manage temporary files (Default: system temporary directory) [Not implemented, directoryin /tmp with a fixed name is used]
-#%end
-#%option
-#% key: grass_command
-#% type: string
-#% required: no
-#% key_desc: name
-#% answer: grass7
-#% description: Name or path of a command to run GRASS GIS
-#%end
-#%option
-#% key: grass_version
-#% type: string
-#% required: no
-#% key_desc: name
-#% description: Version of GRASS GIS used remotely
-#%end
-#%flag
-#% key: k
-#% label: Keep temporary files
-#% description: This is useful for debugging [Not implemented, all files are left behind]
-#%end
-#%flag
-#% key: l
-#% label: Create the remote Location
-#% description: Copy the location to the remote server
-#%end
-#%rules
-#% required: grass_script,exec
-#%end
+# %option G_OPT_V_OUTPUTS
+# % key: vector_output
+# % required: no
+# % description: Name of output vector map(s) used by GRASS script
+# % guisection: Data
+# %end
+# %option
+# % key: backend
+# % type: string
+# % required: no
+# % multiple: no
+# % key_desc: name
+# % label: Backend to be used for connection to the remote machine (server)
+# % description: The main difference between various backends are their dependencies. By default an appropriate backend is selected automatically.
+# % options: simple,pexpect,paramiko,local
+# % descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package;local;Backend which works on local machine
+# %end
+# %option
+# % key: local_workdir
+# % type: string
+# % required: no
+# % key_desc: path
+# % label: Working directory used to manage temporary files on the local machine
+# % description: Default: current directory [Not implemented, only current directory is supported]
+# %end
+# %option
+# % key: remote_workdir
+# % type: string
+# % required: no
+# % key_desc: path
+# % label: Working directory (path) for the script execution on the remote server
+# % description: Used also to manage temporary files (Default: system temporary directory) [Not implemented, directoryin /tmp with a fixed name is used]
+# %end
+# %option
+# % key: grass_command
+# % type: string
+# % required: no
+# % key_desc: name
+# % answer: grass7
+# % description: Name or path of a command to run GRASS GIS
+# %end
+# %option
+# % key: grass_version
+# % type: string
+# % required: no
+# % key_desc: name
+# % description: Version of GRASS GIS used remotely
+# %end
+# %flag
+# % key: k
+# % label: Keep temporary files
+# % description: This is useful for debugging [Not implemented, all files are left behind]
+# %end
+# %flag
+# % key: l
+# % label: Create the remote Location
+# % description: Copy the location to the remote server
+# %end
+# %rules
+# % required: grass_script,exec
+# %end
 
 
 import os
