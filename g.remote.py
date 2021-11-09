@@ -155,7 +155,7 @@
 # % type: string
 # % required: no
 # % key_desc: name
-# % answer: grass7
+# % answer: grass
 # % description: Name or path of a command to run GRASS GIS
 # %end
 # %option
