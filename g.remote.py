@@ -180,6 +180,8 @@
 # %end
 
 
+"""Connect with a GRASS session on a remote server"""
+
 import os
 import stat
 import sys
@@ -416,9 +418,10 @@ def preparse_exec():
     return single_command
 
 
-# TODO: more robust handling, now format ###, e.g. 700, required
+# TODO: more robust handling required, e.g., tuple
 # TODO: acquire automatically when not provided
 def version_to_number(string):
+    """Convert version string to a number"""
     if string:
         return int(string)
     else:
@@ -430,6 +433,7 @@ def version_to_number(string):
 # be advantageous but not always desired. (controlled processing
 # without connection as in g.cloud would be another level)
 def main():
+    """Process command line, create sessions, copy data, and execute commands"""
     single_command = preparse_exec()
     options, flags = gscript.parser()
 

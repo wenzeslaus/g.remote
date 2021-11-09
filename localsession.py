@@ -17,6 +17,9 @@
 ############################################################################
 
 
+"""Control local machine as if it would be a remote machine"""
+
+
 import shlex
 import subprocess
 
@@ -33,12 +36,12 @@ class LocalConnection:
         pass
 
     def _exec(self, command):
-        """Execute command localy"""
+        """Execute command locally"""
         # subprocess needs a list if it should work on all platforms
         subprocess.call(command)
 
     def run(self, command):
-        """Exectute command on a remote machine"""
+        """Execute command on a remote machine"""
         # TODO: list versus string in this context and as a parameter
         # currently, unlike the simplessh, we don't support variable
         # before command which is needed for 7.0 batch processing

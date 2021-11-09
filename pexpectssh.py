@@ -27,6 +27,7 @@
 # http://opensource.apple.com/source/lldb/lldb-112/test/pexpect-2.4/
 # Note that the code is now relicensed under GNU GPL as the MIT license allows.
 
+"""SSH interface which uses Pexpect"""
 
 import getpass
 import os

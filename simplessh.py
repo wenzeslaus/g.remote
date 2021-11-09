@@ -6,7 +6,7 @@
 # MODULE:       simplessh.py (not an actual GRASS module)
 # AUTHOR(S):    Vaclav Petras
 #
-# PURPOSE:      Comunicate with a remote host using ssh and scp
+# PURPOSE:      Communicate with a remote host using ssh and scp
 #
 # COPYRIGHT:    (C) 2015 by Vaclav Petras and GRASS Development Team
 #
@@ -16,6 +16,8 @@
 #
 ############################################################################
 
+
+"""A simple implementation of a remote connection using ssh command et al."""
 
 import subprocess
 

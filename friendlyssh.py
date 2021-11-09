@@ -28,6 +28,7 @@
 # http://media.commandline.org.uk/code/ssh.txt
 # Note that this code is now relicensed under GNU GPL.
 
+"""Friendly SSH interface which uses Paramiko"""
 
 import os
 import sys
