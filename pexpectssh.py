@@ -132,7 +132,7 @@ class SshSession(object):
 
         :param mode: permissions defined in stat package
         """
-        return self.run("chmod {mode} {path}".format(path=path, mode=oct(mode)))
+        return self.run(f"chmod {mode:o} {path}")
 
     def add(self):
         """Function to launch ssh-add"""

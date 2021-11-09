@@ -59,4 +59,4 @@ class LocalConnection(object):
 
         :param mode: permissions defined in stat package
         """
-        return self.run("chmod {mode} {path}".format(path=path, mode=oct(mode)))
+        return self.run(f"chmod {mode:o} {path}")
