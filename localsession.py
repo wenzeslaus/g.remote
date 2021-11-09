@@ -17,8 +17,8 @@
 ############################################################################
 
 
-import subprocess
 import shlex
+import subprocess
 
 
 class LocalConnection:

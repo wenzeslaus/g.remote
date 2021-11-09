@@ -181,8 +181,8 @@
 
 
 import os
-import sys
 import stat
+import sys
 
 import grass.script as gscript
 

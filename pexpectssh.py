@@ -28,12 +28,13 @@
 # Note that the code is now relicensed under GNU GPL as the MIT license allows.
 
 
-import pexpect
-import os
-import sys
-import subprocess
 import getpass
+import os
+import subprocess
+import sys
 import time
+
+import pexpect
 
 
 class SshSession:

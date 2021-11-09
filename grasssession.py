@@ -19,8 +19,8 @@
 ############################################################################
 
 
-import os
 import io
+import os
 import stat
 from collections import Iterable
 
