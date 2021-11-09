@@ -182,9 +182,7 @@
 
 import os
 import sys
-import io
 import stat
-from collections import Iterable
 
 import grass.script as gscript
 

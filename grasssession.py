@@ -20,7 +20,6 @@
 
 
 import os
-import sys
 import io
 import stat
 from collections import Iterable
