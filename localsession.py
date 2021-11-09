@@ -21,7 +21,7 @@ import subprocess
 import shlex
 
 
-class LocalConnection(object):
+class LocalConnection:
     """Connection to run commands and copy files on a local machine
 
     This operates on the localhost but provides unified interface with

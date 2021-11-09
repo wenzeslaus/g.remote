@@ -20,7 +20,7 @@
 import subprocess
 
 
-class SshConnection(object):
+class SshConnection:
     """Connection to run commands on a remote server and copy files
 
     This class uses ``ssh`` and ``scp`` to perform the operations.

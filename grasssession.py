@@ -27,7 +27,7 @@ from collections import Iterable
 import grass.script as gscript
 
 
-class GrassSession(object):
+class GrassSession:
     """Connection to a remote GRASS GIS session"""
 
     def __init__(

@@ -34,7 +34,7 @@ import sys
 import paramiko
 
 
-class Connection(object):
+class Connection:
 
     """Connects and logs into the specified hostname.
     Arguments that are not given are guessed from the environment."""

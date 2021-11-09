@@ -36,7 +36,7 @@ import getpass
 import time
 
 
-class SshSession(object):
+class SshSession:
     """Connection to run commands on a remote server and copy files
 
     This class uses ``ssh`` and ``scp`` to perform the operations
