@@ -38,6 +38,8 @@ import pexpect
 
 
 class SshSession:
+    # We allow for a higher number of attributes, although some could be grouped.
+    # pylint: disable=too-many-instance-attributes
     """Connection to run commands on a remote server and copy files
 
     This class uses ``ssh`` and ``scp`` to perform the operations
@@ -52,6 +54,8 @@ class SshSession:
         :param password: user password for a remote machine
         :param verbose: whether the execution should be verbose
         """
+        # Allow many arguments to create an object.
+        # pylint: disable=too-many-arguments
         self.user = user
         self.host = host
         self.verbose = verbose
@@ -104,7 +108,7 @@ class SshSession:
             sys.stderr.write("<- " + child.before + "|\n")
         try:
             self.logfile.write(str(child.before) + str(child.after) + "\n")
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             # Ignoring logging errors and access errors during logging.
             pass
         # self.logfile.close()

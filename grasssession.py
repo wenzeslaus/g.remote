@@ -31,6 +31,10 @@ import grass.script as gscript
 class GrassSession:
     """Connection to a remote GRASS GIS session"""
 
+    # Especially, mapset-related attributes could be managed by a new v8 MapsetPath
+    # object, but in general, we consider this a massive class.
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(
         self,
         connection,
@@ -41,6 +45,9 @@ class GrassSession:
         grass_command,
         grass_version,
     ):
+        # Allow many arguments to create an object.
+        # pylint: disable=too-many-arguments
+
         self.connection = connection
         self.grass_command = grass_command
         self.grass_version = grass_version

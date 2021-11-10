@@ -207,8 +207,7 @@ def as_list(option):
     """Convert "option multiple" to a list"""
     if option:
         return option.split(",")
-    else:
-        return []
+    return []
 
 
 def check_config_file(filename):
@@ -279,6 +278,8 @@ def get_session(options):
     for backend in backends:
         if backend == "paramiko":
             try:
+                # Lazy-import to reduce import-time dependencies.
+                # pylint: disable=import-outside-toplevel
                 from friendlyssh import Connection
 
                 session = Connection(
@@ -296,6 +297,8 @@ def get_session(options):
                 continue
         elif backend == "simple":
             try:
+                # Lazy-import to reduce import-time dependencies.
+                # pylint: disable=import-outside-toplevel
                 from simplessh import SshConnection as Connection
 
                 # TODO: support password and port (or warn they are missing)
@@ -312,6 +315,8 @@ def get_session(options):
                 continue
         elif backend == "pexpect":
             try:
+                # Lazy-import to reduce import-time dependencies.
+                # pylint: disable=import-outside-toplevel
                 from pexpectssh import SshSession as Connection
 
                 # TODO: support port (or warn it's missing)
@@ -335,6 +340,8 @@ def get_session(options):
                 continue
         elif backend == "local":
             try:
+                # Lazy-import to reduce import-time dependencies.
+                # pylint: disable=import-outside-toplevel
                 from localsession import LocalConnection as Connection
 
                 session = Connection()
@@ -394,6 +401,8 @@ def preparse_exec():
         # ...exec="g.region -p"... or ...exec=g.region -p
         exec_value = sys.argv[split_at].split("=")[1]
         if " " in exec_value:  # is not module name
+            # Lazy-import because it os needed only here.
+            # pylint: disable=import-outside-toplevel
             # exec is a whole command, this code could be also somewhere
             # later on but we need the other tests anyway, after this
             # we just use normal parser
@@ -433,6 +442,8 @@ def version_to_number(string):
 # without connection as in g.cloud would be another level)
 def main():
     """Process command line, create sessions, copy data, and execute commands"""
+    # For handling command line, we allow many local variables here.
+    # pylint: disable=too-many-locals
     single_command = preparse_exec()
     options, flags = gscript.parser()
 
@@ -460,6 +471,8 @@ def main():
         # TODO: this should be tmp
         local_workdir = "."
 
+    # Lazy-import only after CLI was processed.
+    # pylint: disable=import-outside-toplevel
     from grasssession import GrassSession
 
     # TODO: default grass binary should be derived from the version we are running

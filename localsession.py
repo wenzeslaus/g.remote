@@ -36,6 +36,8 @@ class LocalConnection:
 
     def _exec(self, command):
         """Execute command locally"""
+        # No self, but it is a useful method for consitency with other implementations.
+        # pylint: disable=no-self-use
         # subprocess needs a list if it should work on all platforms
         subprocess.call(command)
 
