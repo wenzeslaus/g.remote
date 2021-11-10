@@ -28,15 +28,15 @@ from collections.abc import Iterable
 
 import grass.script as gs
 
+
 def unique_script_name(code, extension):
     """Return unique name for a script
 
     Randomizes the name but keeps it informative by adding start of code.
     """
-    unique = gs.legalize_vector_name(code[:min(len(code), 20)], fallback_prefix="x")
+    unique = gs.legalize_vector_name(code[: min(len(code), 20)], fallback_prefix="x")
     unique = gs.append_uuid(unique)
     return f"g_remote_script_{unique}.{extension}"
-
 
 
 class GrassSession:
