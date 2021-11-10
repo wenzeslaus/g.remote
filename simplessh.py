@@ -47,7 +47,7 @@ class SshConnection:
             # works for OpenSSH client and related scp
             # will not prompt for password if keys are not available
             command.insert(1, "-oBatchMode=yes")
-        subprocess.call(command)
+        return subprocess.run(command, shell=False, check=False, capture_output=True)
 
     def run(self, command):
         """Exectute command on a remote machine"""

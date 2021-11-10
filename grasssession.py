@@ -23,6 +23,7 @@
 import io
 import os
 import stat
+import sys
 from collections.abc import Iterable
 
 import grass.script as gs
@@ -67,12 +68,18 @@ class GrassSession:
         self.full_mapset = self.remote_sep.join([grassdata, location, mapset])
         self.full_permanent = self.remote_sep.join([grassdata, location, "PERMANENT"])
         if directory:
+            # Parent directory must exist (we don't want to create whole hierarchy).
+            result = self.connection.run("ls {directory}/..")
+            # Create the directory if it does not exist.
+            self.connection.run("mkdir -p {directory}")
             self.directory = directory
+            self._delete_directory = False
         else:
-            directory = "/tmp/gremote"
-            self.directory = directory
-            # TODO: implement connection.mkdir (duplicate os or shutils names)
-            self.connection.run("mkdir {dir}".format(dir=directory))
+            # Create temporary directory on the remote machine and mark delete it later.
+            result = self.connection.run("mktemp -d")
+            self.directory = result.stdout.strip().decode()
+            self._delete_directory = True
+            # TODO: implement connection.mkdir (and duplicate os or shutils names?)
 
     def create_location(self):
         """Create a Location on a remote server"""
@@ -105,9 +112,11 @@ class GrassSession:
         region_file = gs.find_file(region_name, element="windows")["file"]
         remote_dir = "/".join([self.full_mapset, "windows"])
         remote_file = "/".join([remote_dir, region_name])
-        self.connection.run("mkdir {dir}".format(dir=remote_dir))
+        self.connection.run("mkdir -p {dir}".format(dir=remote_dir))
         self.connection.put(region_file, remote_file)
-        self.run_command("g.region", region=region_name)
+        result = self.run_command("g.region", region=region_name)
+        if result.returncode:
+            print(result.stderr.decode(), file=sys.stderr)
 
     def put_elements(self, elements, pack, unpack, suffix):
         """Copy each element to the server
@@ -125,7 +134,9 @@ class GrassSession:
             gs.run_command(pack, input=name, output=filename, overwrite=True)
             remote_filename = "{dir}/{file}".format(dir=self.directory, file=filename)
             self.connection.put(filename, remote_filename)
-            self.run_command(unpack, input=remote_filename, overwrite=True)
+            result = self.run_command(unpack, input=remote_filename, overwrite=True)
+            if result.returncode:
+                print(result.stderr.decode(), file=sys.stderr)
 
     def get_elements(self, elements, pack, unpack, suffix):
         """Copy each element from the server
@@ -170,24 +181,16 @@ class GrassSession:
         )
         self.connection.put(script_path, remote_script_path)
         self.connection.chmod(remote_script_path, stat.S_IRWXU)
-        if not self.grass_version or self.grass_version < 720:
-            self.connection.run(
-                "GRASS_BATCH_JOB={script} {grass} -text {mapset}".format(
-                    script=remote_script_path,
-                    mapset=self.full_mapset,
-                    grass=self.grass_command,
-                )
+        result = self.connection.run(
+            "{grass} {mapset} --exec {script}".format(
+                script=remote_script_path,
+                mapset=self.full_mapset,
+                grass=self.grass_command,
             )
-        else:
-            self.connection.run(
-                "{grass} -text {mapset} --exec {script}".format(
-                    script=remote_script_path,
-                    mapset=self.full_mapset,
-                    grass=self.grass_command,
-                )
-            )
+        )
         if remove:
             self.connection.run("rm {file}".format(file=remote_script_path))
+        return result
 
     def run_code(self, code):
         """Run piece of Python code on the server
@@ -210,8 +213,9 @@ class GrassSession:
         else:
             script.write(code)
         script.close()
-        self.run_script(script_name, remove=True)
+        result = self.run_script(script_name, remove=True)
         os.remove(script_name)
+        return result
 
     def run_command(self, *args, **kwargs):
         """Run a module with given parameters on the server"""
@@ -228,7 +232,7 @@ class GrassSession:
                 "{opt}={q}{val}{q}".format(opt=opt, val=str(val), q=quote)
             )
         code = "gs.run_command({})\n".format(", ".join(parameters))
-        self.run_code(code)
+        return self.run_code(code)
 
     def run_bash_code(self, code):
         """Run piece of Bash code on the server"""
@@ -248,8 +252,9 @@ class GrassSession:
         else:
             script.write(code)
         script.close()
-        self.run_script(script_name, remove=True)
+        result = self.run_script(script_name, remove=True)
         os.remove(script_name)
+        return result
 
     def run_bash_command(self, command):
         """Run a bash command provided as list"""
@@ -257,8 +262,9 @@ class GrassSession:
         # TODO: for 7.2 and higher, it could use --exec and skip script
         # TODO: parameters for accumulating commands and executing all at once
         code = ["'%s'" % str(arg) for arg in command]
-        self.run_bash_code(" ".join(code))
+        return self.run_bash_code(" ".join(code))
 
     def close(self):
         """Finish the connection"""
-        self.connection.run("rm -r {dir}".format(dir=self.directory))
+        if self._delete_directory:
+            self.connection.run(f"rm -r {self.directory}")

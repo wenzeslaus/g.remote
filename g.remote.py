@@ -491,13 +491,21 @@ def main():
     gsession.put_rasters(raster_inputs)
     gsession.put_vectors(vector_inputs)
     if script_path:
-        gsession.run_script(script_path)
+        result = gsession.run_script(script_path)
     elif single_command:
-        gsession.run_bash_command(single_command)
+        result = gsession.run_bash_command(single_command)
+    if not result.returncode and result.stderr:
+        print(result.stderr.decode())
+    if result.stdout:
+        print(result.stdout.decode())
+    if result.returncode and result.stderr:
+        print(result.stderr.decode())
     # TODO: add also Python code as an input
-    gsession.get_rasters(raster_outputs)
-    gsession.get_vectors(vector_outputs)
+    if not result.returncode:
+        gsession.get_rasters(raster_outputs)
+        gsession.get_vectors(vector_outputs)
     gsession.close()
+    sys.exit(result.returncode)
 
 
 if __name__ == "__main__":
