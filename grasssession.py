@@ -25,7 +25,7 @@ import os
 import stat
 from collections.abc import Iterable
 
-import grass.script as gscript
+import grass.script as gs
 
 
 class GrassSession:
@@ -71,7 +71,7 @@ class GrassSession:
         self.connection.run("mkdir {dir}".format(dir=self.full_location))
         self.connection.run("mkdir {dir}".format(dir=self.full_permanent))
         # copy the files
-        path = gscript.read_command(
+        path = gs.read_command(
             "g.gisenv", get="GISDBASE,LOCATION_NAME", separator="/"
         ).strip()
         path = os.path.join(path, "PERMANENT")
@@ -91,8 +91,8 @@ class GrassSession:
         """Set the remote region to the current region"""
         region_name = "g_remote_current_region"
         # TODO: remove the region
-        gscript.run_command("g.region", save=region_name, overwrite=True)
-        region_file = gscript.find_file(region_name, element="windows")["file"]
+        gs.run_command("g.region", save=region_name, overwrite=True)
+        region_file = gs.find_file(region_name, element="windows")["file"]
         remote_dir = "/".join([self.full_mapset, "windows"])
         remote_file = "/".join([remote_dir, region_name])
         self.connection.run("mkdir {dir}".format(dir=remote_dir))
@@ -112,7 +112,7 @@ class GrassSession:
         """
         for name in elements:
             filename = name + suffix
-            gscript.run_command(pack, input=name, output=filename, overwrite=True)
+            gs.run_command(pack, input=name, output=filename, overwrite=True)
             remote_filename = "{dir}/{file}".format(dir=self.directory, file=filename)
             self.connection.put(filename, remote_filename)
             self.run_command(unpack, input=remote_filename, overwrite=True)
@@ -127,7 +127,7 @@ class GrassSession:
             remote_filename = "{dir}/{file}".format(dir=self.directory, file=filename)
             self.run_command(pack, input=name, output=remote_filename, overwrite=True)
             self.connection.get(remote_filename, filename)
-            gscript.run_command(unpack, input=filename, overwrite=True)
+            gs.run_command(unpack, input=filename, overwrite=True)
 
     def put_rasters(self, maps):
         """Copy raster maps to server"""
@@ -189,7 +189,7 @@ class GrassSession:
         script = io.open(script_name, "w", newline="")
 
         script.write("#!/usr/bin/env python\n")
-        script.write("import grass.script as gscript\n")
+        script.write("import grass.script as gs\n")
 
         if (
             not isinstance(code, str)
@@ -218,7 +218,7 @@ class GrassSession:
             parameters.append(
                 "{opt}={q}{val}{q}".format(opt=opt, val=str(val), q=quote)
             )
-        code = "gscript.run_command(%s)\n" % ", ".join(parameters)
+        code = "gs.run_command({})\n".format(", ".join(parameters))
         self.run_code(code)
 
     def run_bash_code(self, code):

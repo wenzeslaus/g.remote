@@ -186,7 +186,7 @@ import os
 import stat
 import sys
 
-import grass.script as gscript
+import grass.script as gs
 
 
 def ensure_nones(dictionary, keys):
@@ -213,9 +213,9 @@ def as_list(option):
 def check_config_file(filename):
     """Check if config file exists and has expected permissions"""
     if not os.path.exists(filename):
-        gscript.fatal(_("The file <%s> doesn't exist") % filename)
+        gs.fatal(_("The file <{}> doesn't exist").format(filename))
     if stat.S_IMODE(os.stat(filename).st_mode) != int("0600", 8):
-        gscript.fatal(
+        gs.fatal(
             _(
                 "The file permissions of <{config}> are considered"
                 " insecure.\nPlease correct permissions to read and"
@@ -249,7 +249,7 @@ def get_session(options):
     # command lines)
     config_name = options["config"]
     if config_name:
-        gscript.debug("Config file supplied for login")
+        gs.debug("Config file supplied for login")
         check_config_file(config_name)
         with open(config_name, "r") as config_file:
             config = config_file.read()
@@ -257,11 +257,11 @@ def get_session(options):
             # (supposing no spaces in user name and password)
             values = config.split()
             if len(values) == 2:
-                gscript.verbose(_("Using values for login from config file"))
+                gs.verbose(_("Using values for login from config file"))
                 options["user"] = values[0]
                 options["password"] = values[1]
             else:
-                gscript.fatal(
+                gs.fatal(
                     _(
                         "The config file <%s> is not well-formed."
                         " It should contain user name and password"
@@ -288,10 +288,10 @@ def get_session(options):
                     password=options["password"],
                     port=options["port"],
                 )
-                gscript.verbose(_("Using Paramiko backend"))
+                gs.verbose(_("Using Paramiko backend"))
                 break
             except ImportError as error:
-                gscript.verbose(
+                gs.verbose(
                     _("Tried Paramiko backend but" " it is not available (%s)" % error)
                 )
                 continue
@@ -303,10 +303,10 @@ def get_session(options):
 
                 # TODO: support password and port (or warn they are missing)
                 session = Connection(user=options["user"], host=options["server"])
-                gscript.verbose(_("Using simple (ssh and scp) backend"))
+                gs.verbose(_("Using simple (ssh and scp) backend"))
                 break
             except ImportError as error:
-                gscript.verbose(
+                gs.verbose(
                     _(
                         "Tried simple (ssh and scp) backend but"
                         " it is not available (%s)" % error
@@ -327,10 +327,10 @@ def get_session(options):
                     verbose=1,
                     password=options["password"],
                 )
-                gscript.verbose(_("Using Pexpect (with ssh and scp) backend"))
+                gs.verbose(_("Using Pexpect (with ssh and scp) backend"))
                 break
             except ImportError as error:
-                gscript.verbose(
+                gs.verbose(
                     _(
                         "Tried Pexpect (ssh, scp and pexpect)"
                         " backend but it is not available"
@@ -345,10 +345,10 @@ def get_session(options):
                 from localsession import LocalConnection as Connection
 
                 session = Connection()
-                gscript.verbose(_("Using local host backend"))
+                gs.verbose(_("Using local host backend"))
                 break
             except ImportError as error:
-                gscript.verbose(
+                gs.verbose(
                     _(
                         "Tried local host"
                         " backend but it is not available"
@@ -371,7 +371,7 @@ def get_session(options):
                 "All should be in the software repositories."
                 " If Paramiko is not in the repository use pip."
             )
-        gscript.fatal(
+        gs.fatal(
             _(
                 "No backend available. {general_hint} {platform_hint}" " {verbose}"
             ).format(
@@ -445,7 +445,7 @@ def main():
     # For handling command line, we allow many local variables here.
     # pylint: disable=too-many-locals
     single_command = preparse_exec()
-    options, flags = gscript.parser()
+    options, flags = gs.parser()
 
     script_path = options["grass_script"]
     # TODO: read script from stdin
