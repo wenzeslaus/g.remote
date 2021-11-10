@@ -27,6 +27,16 @@ from collections.abc import Iterable
 
 import grass.script as gs
 
+def unique_script_name(code, extension):
+    """Return unique name for a script
+
+    Randomizes the name but keeps it informative by adding start of code.
+    """
+    unique = gs.legalize_vector_name(code[:min(len(code), 20)], fallback_prefix="x")
+    unique = gs.append_uuid(unique)
+    return f"g_remote_script_{unique}.{extension}"
+
+
 
 class GrassSession:
     """Connection to a remote GRASS GIS session"""
@@ -184,8 +194,7 @@ class GrassSession:
 
         Some imports are provided.
         """
-        # TODO randomize the name but keep it informative (add start of code)
-        script_name = "pack_script.py"
+        script_name = unique_script_name(code, "py")
         script = io.open(script_name, "w", newline="")
 
         script.write("#!/usr/bin/env python\n")
@@ -223,9 +232,7 @@ class GrassSession:
 
     def run_bash_code(self, code):
         """Run piece of Bash code on the server"""
-        # TODO: io requires unicode but we should be able to accept str and unicode
-        # TODO randomize the name but keep it informative (add start of code)
-        script_name = "pack_script.sh"
+        script_name = unique_script_name(code, "sh")
         script = io.open(script_name, "w", newline="")
 
         script.write("#!/usr/bin/env bash\n")
