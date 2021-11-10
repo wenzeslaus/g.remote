@@ -106,7 +106,7 @@ class GrassSession:
 
     def put_region(self):
         """Set the remote region to the current region"""
-        region_name = "g_remote_current_region"
+        region_name = gs.append_node_pid("g_remote_current")
         # TODO: remove the region
         gs.run_command("g.region", save=region_name, overwrite=True)
         region_file = gs.find_file(region_name, element="windows")["file"]
