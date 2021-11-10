@@ -23,7 +23,7 @@
 import io
 import os
 import stat
-from collections import Iterable
+from collections.abc import Iterable
 
 import grass.script as gscript
 

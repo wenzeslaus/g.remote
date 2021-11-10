@@ -32,7 +32,6 @@ class LocalConnection:
     """
 
     def __init__(self):
-        """ """
         pass
 
     def _exec(self, command):

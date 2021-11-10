@@ -30,7 +30,6 @@
 """SSH interface which uses Pexpect"""
 
 import getpass
-import os
 import subprocess
 import sys
 import time
@@ -89,7 +88,7 @@ class SshSession:
         if seen == 0:
             child.sendline("yes")
             seen = child.expect(self.keys)
-        if seen == 1 or seen == 2:
+        if seen in [1, 2]:
             if not self.password:
                 self.password = getpass.getpass("Remote password: ")
             child.sendline(self.password)
@@ -135,22 +134,6 @@ class SshSession:
         :param mode: permissions defined in stat package
         """
         return self.run(f"chmod {mode:o} {path}")
-
-    def add(self):
-        """Function to launch ssh-add"""
-        sess = self._exec("ssh-add")
-        if sess.find("Could not open") == -1:
-            return 0
-        else:
-            self.openagent = True
-            proc = subprocess.Popen(["ssh-agent", "-s"], stdout=subprocess.PIPE)
-            output = proc.stdout.read()
-            vari = output.split("\n")
-            sshauth = vari[0].split(";")[0].split("=")
-            sshpid = vari[1].split(";")[0].split("=")
-            os.putenv(sshauth[0], sshauth[1])
-            os.putenv(sshpid[0], sshpid[1])
-            self.add()
 
     def close(self):
         """Close connection"""

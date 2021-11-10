@@ -30,6 +30,7 @@
 
 """Friendly SSH interface which uses Paramiko"""
 
+import logging
 import os
 import sys
 
@@ -49,6 +50,10 @@ class Connection:
         password=None,
         port=22,
     ):
+        # Allow many arguments to create an object.
+        # pylint: disable=too-many-arguments
+
+        self.log = logging.getLogger("grass.g_remote.friendlyssh.Connection")
 
         self._sftp_live = False
         self._sftp = None
@@ -96,11 +101,7 @@ class Connection:
             try:
                 self._sftp.get("%s/%s" % (remotepath, i), "%s/%s" % (localpath, i))
             except IOError as error:
-                self.log.warn(
-                    "unable to recover item '{item}': {error}".format(
-                        item=i, error=error
-                    )
-                )
+                self.log.warning(f"unable to recover item '{i}': {error}")
 
     def put(self, localpath, remotepath=None):
         """Copies a file between the local host and the remote host."""

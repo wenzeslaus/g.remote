@@ -424,8 +424,7 @@ def version_to_number(string):
     """Convert version string to a number"""
     if string:
         return int(string)
-    else:
-        return None
+    return None
 
 
 # TODO: what happens to the processes when we interrupt the module
