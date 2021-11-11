@@ -230,51 +230,14 @@ def check_config_file(filename):
         )
 
 
-# options could be replaced by individual parameters
-def get_session(options):
-    """Based on a dictionary and available backends create a remote session"""
-    requested_backend = options["backend"]
-    if requested_backend:
-        backends = [requested_backend]
-    else:
-        # on win there is minimal chance of ssh but try anyway
-        # pexpect only upon request, it is specific and insufficiently tested
-        backends = ["fabric", "paramiko", "simple"]
-    session = None
-    ensure_nones(options, ["port", "password"])
-    to_ints(options, ["port"])
-
-    # TODO: provide a flag (or default) for reading the file or params
-    # from some standardized location or variable (so we have shorter
-    # command lines)
-    config_name = options["config"]
-    if config_name:
-        gs.debug("Config file supplied for login")
-        check_config_file(config_name)
-        with open(config_name, "r") as config_file:
-            config = config_file.read()
-            # split using whitespace
-            # (supposing no spaces in user name and password)
-            values = config.split()
-            if len(values) == 2:
-                gs.verbose(_("Using values for login from config file"))
-                options["user"] = values[0]
-                options["password"] = values[1]
-            else:
-                gs.fatal(
-                    _(
-                        "The config file <%s> is not well-formed."
-                        " It should contain user name and password"
-                        " separated by whitespace"
-                        " (newlines, spaces or tabs)" % config_name
-                    )
-                )
-
+def start_connection_backend(options, backends):
+    """Create and start a connection using a requested or available backend"""
     # get access to wrappers
     from grass.pygrass.utils import set_path
 
     set_path("g.remote")
 
+    session = None
     for backend in backends:
         if backend == "paramiko":
             try:
@@ -375,6 +338,50 @@ def get_session(options):
                     )
                 )
                 continue
+    return session
+
+
+# options could be replaced by individual parameters
+def get_session(options):
+    """Based on a dictionary and available backends create a remote session"""
+    requested_backend = options["backend"]
+    if requested_backend:
+        backends = [requested_backend]
+    else:
+        # on win there is minimal chance of ssh but try anyway
+        # pexpect only upon request, it is specific and insufficiently tested
+        backends = ["fabric", "paramiko", "simple"]
+    ensure_nones(options, ["port", "password"])
+    to_ints(options, ["port"])
+
+    # TODO: provide a flag (or default) for reading the file or params
+    # from some standardized location or variable (so we have shorter
+    # command lines)
+    config_name = options["config"]
+    if config_name:
+        gs.debug("Config file supplied for login")
+        check_config_file(config_name)
+        with open(config_name, "r") as config_file:
+            config = config_file.read()
+            # split using whitespace
+            # (supposing no spaces in user name and password)
+            values = config.split()
+            if len(values) == 2:
+                gs.verbose(_("Using values for login from config file"))
+                options["user"] = values[0]
+                options["password"] = values[1]
+            else:
+                gs.fatal(
+                    _(
+                        "The config file <%s> is not well-formed."
+                        " It should contain user name and password"
+                        " separated by whitespace"
+                        " (newlines, spaces or tabs)" % config_name
+                    )
+                )
+
+    session = start_connection_backend(options, backends)
+
     if session is None:
         hint = _("Please install Paramiko Python package" " or ssh and scp tools.")
         verbose_message = _("Use --verbose flag to get more information.")

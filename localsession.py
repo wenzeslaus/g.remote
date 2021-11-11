@@ -39,7 +39,7 @@ class LocalConnection:
         # No self, but it is a useful method for consitency with other implementations.
         # pylint: disable=no-self-use
         # subprocess needs a list if it should work on all platforms
-        return subprocess.run(command, capture_output=True)
+        return subprocess.run(command, check=False, capture_output=True)
 
     def run(self, command):
         """Execute command on a remote machine"""
