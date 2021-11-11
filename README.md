@@ -18,7 +18,7 @@ on the local machine.
 ### Linux
 
 You need something which provides `ssh` and `scp` commands or
-you need to have Paramico Python package.
+you need to have Fabric or Paramiko Python package.
 
 To install SSH on Ubuntu use:
 
@@ -27,9 +27,13 @@ To install SSH on Ubuntu use:
 This package provided `ssh` and other tools required used by
 the `simple` backend.
 
-You can also use Python SSH implementation Paramiko:
+You can also use Python SSH implementation Fabric.
+To install Fabric using _pip_ do:
 
-To install Paramiko on Ubuntu use:
+    pip install fabric
+
+You can also use lower-level Python SSH implementation Paramiko.
+For example, to install Paramiko from system packages on Ubuntu use:
 
     sudo apt-get install python-paramiko
 

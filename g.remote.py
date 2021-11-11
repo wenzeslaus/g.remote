@@ -131,8 +131,8 @@
 # % key_desc: name
 # % label: Backend to be used for connection to the remote machine (server)
 # % description: The main difference between various backends are their dependencies. By default an appropriate backend is selected automatically.
-# % options: simple,pexpect,paramiko,local
-# % descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;paramiko;Paramiko backend requires Paramiko Python package;local;Backend which works on local machine
+# % options: simple,pexpect,fabric,paramiko,local
+# % descriptions: simple;Simple backend requires ssh and scp command line tools to be installed and available on PATH;pexpect;Pexpect backend requires the same as simple backend and Pexpect Python package;fabric;Fabric backend requires Fabric Python package;paramiko;Paramiko backend requires Paramiko Python package;local;Backend which works on local machine
 # %end
 # %option
 # % key: local_workdir
@@ -239,7 +239,7 @@ def get_session(options):
     else:
         # on win there is minimal chance of ssh but try anyway
         # pexpect only upon request, it is specific and insufficiently tested
-        backends = ["paramiko", "simple"]
+        backends = ["fabric", "paramiko", "simple"]
     session = None
     ensure_nones(options, ["port", "password"])
     to_ints(options, ["port"])
@@ -293,6 +293,25 @@ def get_session(options):
             except ImportError as error:
                 gs.verbose(
                     _("Tried Paramiko backend but" " it is not available (%s)" % error)
+                )
+                continue
+        elif backend == "fabric":
+            try:
+                # Lazy-import to reduce import-time dependencies.
+                # pylint: disable=import-outside-toplevel
+                from fabricbackend import FabricConnection
+
+                session = FabricConnection(
+                    user=options["user"],
+                    host=options["server"],
+                    connect_kwargs={"password": options["password"]},
+                    port=options["port"],
+                )
+                gs.verbose(_("Using Fabric backend"))
+                break
+            except ImportError as error:
+                gs.verbose(
+                    _("Tried Fabric backend but it is not available: {}".format(error))
                 )
                 continue
         elif backend == "simple":
@@ -495,11 +514,11 @@ def main():
     elif single_command:
         result = gsession.run_bash_command(single_command)
     if not result.returncode and result.stderr:
-        print(result.stderr.decode())
+        print(result.stderr)
     if result.stdout:
-        print(result.stdout.decode())
+        print(result.stdout)
     if result.returncode and result.stderr:
-        print(result.stderr.decode())
+        print(result.stderr)
     # TODO: add also Python code as an input
     if not result.returncode:
         gsession.get_rasters(raster_outputs)

@@ -77,7 +77,7 @@ class GrassSession:
         else:
             # Create temporary directory on the remote machine and mark delete it later.
             result = self.connection.run("mktemp -d")
-            self.directory = result.stdout.strip().decode()
+            self.directory = result.stdout.strip()
             self._delete_directory = True
             # TODO: implement connection.mkdir (and duplicate os or shutils names?)
 
@@ -116,7 +116,7 @@ class GrassSession:
         self.connection.put(region_file, remote_file)
         result = self.run_command("g.region", region=region_name)
         if result.returncode:
-            print(result.stderr.decode(), file=sys.stderr)
+            print(result.stderr, file=sys.stderr)
 
     def put_elements(self, elements, pack, unpack, suffix):
         """Copy each element to the server
@@ -136,7 +136,7 @@ class GrassSession:
             self.connection.put(filename, remote_filename)
             result = self.run_command(unpack, input=remote_filename, overwrite=True)
             if result.returncode:
-                print(result.stderr.decode(), file=sys.stderr)
+                print(result.stderr, file=sys.stderr)
 
     def get_elements(self, elements, pack, unpack, suffix):
         """Copy each element from the server
