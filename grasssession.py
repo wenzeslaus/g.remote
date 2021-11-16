@@ -25,6 +25,7 @@ import os
 import stat
 import sys
 from collections.abc import Iterable
+from pathlib import Path
 
 import grass.script as gs
 
@@ -259,11 +260,7 @@ class GrassSession:
             value = "1" if self.remote_overwrite else "0"
             script.write(f"export GRASS_OVERWRITE={value}\n")
 
-        if (
-            not isinstance(code, str)
-            and not isinstance(code, str)
-            and isinstance(code, Iterable)
-        ):
+        if not isinstance(code, str) and isinstance(code, Iterable):
             for line in code:
                 script.write(line + "\n")
         else:

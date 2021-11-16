@@ -243,7 +243,7 @@ def add_python_modules_to_path_if_needed():
     try:
         # If it imports, no action is needed.
         # pylint: disable=unused-import
-        import grasssession   # noqa: F401
+        import grasssession  # noqa: F401
     except ImportError:
         # Not on path, try to add them to the path now.
         # (Module fails if the path can't be set up.)

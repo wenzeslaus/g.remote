@@ -22,6 +22,10 @@ class FabricConnection(Connection):
     """
 
     def run(self, command, check=True, **kwargs):
+        # The number of arguments differ from Connection.run, but the interface
+        # stays the same. Additionally, only with a lot interface changes,
+        # we would be concerned with using inheritance in a wrong way.
+        # pylint: disable=arguments-differ
         warn = not check
         result = super().run(command, hide=True, warn=warn, **kwargs)
         result.returncode = result.return_code
