@@ -84,6 +84,7 @@
 # % required: yes
 # % key_desc: directory
 # % description: GRASS Mapset on a remote host
+# % answer: PERMANENT
 # %end
 # %option G_OPT_F_INPUT
 # % key: grass_script
