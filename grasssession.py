@@ -92,10 +92,11 @@ class GrassSession:
             "g.gisenv", get="GISDBASE,LOCATION_NAME", separator="/"
         ).strip()
         path = os.path.join(path, "PERMANENT")
-        for file in ["DEFAULT_WIND", "MYNAME", "PROJ_EPSG", "PROJ_INFO", "PROJ_UNITS"]:
-            local = os.path.join(path, file)
-            remote = self.remote_sep.join([self.full_location, "PERMANENT", file])
-            self.connection.put(local, remote)
+        for file in ["DEFAULT_WIND", "MYNAME", "PROJ_SRID", "PROJ_INFO", "PROJ_UNITS"]:
+            local = Path(path) / file
+            if local.exists():
+                remote = self.remote_sep.join([self.full_location, "PERMANENT", file])
+                self.connection.put(local, remote)
         # if location is new, then mapset does not exist
         self.connection.run(
             "{grass} -text {mapset} -c -e".format(
@@ -112,6 +113,8 @@ class GrassSession:
         region_file = gs.find_file(region_name, element="windows")["file"]
         remote_dir = "/".join([self.full_mapset, "windows"])
         remote_file = "/".join([remote_dir, region_name])
+        # Check that the parent directory exists.
+        self.connection.run(f"ls {self.full_mapset}")
         self.connection.run("mkdir -p {dir}".format(dir=remote_dir))
         self.connection.put(region_file, remote_file)
         result = self.run_command("g.region", region=region_name)

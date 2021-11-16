@@ -39,7 +39,7 @@ class SshConnection:
         self.host = host
         self.openssh = True  # currently equivalent with theoretical batch=True
 
-    def _exec(self, command):
+    def _exec(self, command, check=True):
         """Execute command localy"""
         # subprocess needs a list if it should work on all platforms
         # without shell=True
@@ -47,7 +47,7 @@ class SshConnection:
             # works for OpenSSH client and related scp
             # will not prompt for password if keys are not available
             command.insert(1, "-oBatchMode=yes")
-        result = subprocess.run(command, shell=False, check=False, capture_output=True)
+        result = subprocess.run(command, shell=False, check=check, capture_output=True)
         result.stdout = result.stdout.decode()
         result.stderr = result.stderr.decode()
         return result

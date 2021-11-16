@@ -21,8 +21,9 @@ class FabricConnection(Connection):
     Connection arguments that are not given are determined automatically if possible.
     """
 
-    def run(self, command, **kwargs):
-        result = super().run(command, hide=True, **kwargs)
+    def run(self, command, check=True, **kwargs):
+        warn = not check
+        result = super().run(command, hide=True, warn=warn, **kwargs)
         result.returncode = result.return_code
         return result
 
