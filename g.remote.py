@@ -230,12 +230,24 @@ def check_config_file(filename):
         )
 
 
+def add_python_modules_to_path_if_needed():
+    """If modules cannot be imported, add them to the path."""
+    # Importing here because it is for test and than for a fallback.
+    # pylint: disable=import-outside-toplevel
+    try:
+        # If it imports, no action is needed.
+        # pylint: disable=unused-import
+        import grasssession   # noqa: F401
+    except ImportError:
+        # Not on path, try to add them to the path now.
+        # (Module fails if the path can't be set up.)
+        from grass.script.utils import set_path
+
+        set_path("g.remote")
+
+
 def start_connection_backend(options, backends):
     """Create and start a connection using a requested or available backend"""
-    # get access to wrappers
-    from grass.pygrass.utils import set_path
-
-    set_path("g.remote")
 
     session = None
     for backend in backends:
@@ -488,6 +500,7 @@ def main():
 
     grass_version = version_to_number(options["grass_version"])
 
+    add_python_modules_to_path_if_needed()
     session = get_session(options)
 
     # TODO: use variable, e.g. for packing
