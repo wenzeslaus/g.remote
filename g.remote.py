@@ -176,6 +176,11 @@
 # % label: Create the remote Location
 # % description: Copy the location to the remote server
 # %end
+# %flag
+# % key: o
+# % label: Overwrite in the remote Location
+# % description: Apply overwrite to all operations in the remote Location
+# %end
 # %rules
 # % required: grass_script,exec
 # %end
@@ -524,6 +529,7 @@ def main():
         grass_command=options["grass_command"],
         grass_version=grass_version,
         directory=options["remote_workdir"],
+        remote_overwrite=flags["o"],
     )
     if flags["l"]:
         gsession.create_location()

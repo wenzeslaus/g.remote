@@ -55,6 +55,7 @@ class GrassSession:
         directory,
         grass_command,
         grass_version,
+        remote_overwrite=None,
     ):
         # Allow many arguments to create an object.
         # pylint: disable=too-many-arguments
@@ -80,6 +81,7 @@ class GrassSession:
             self.directory = result.stdout.strip()
             self._delete_directory = True
             # TODO: implement connection.mkdir (and duplicate os or shutils names?)
+        self.remote_overwrite = remote_overwrite
 
     def create_location(self):
         """Create a Location on a remote server"""
@@ -137,7 +139,9 @@ class GrassSession:
             gs.run_command(pack, input=name, output=filename, overwrite=True)
             remote_filename = "{dir}/{file}".format(dir=self.directory, file=filename)
             self.connection.put(filename, remote_filename)
-            result = self.run_command(unpack, input=remote_filename, overwrite=True)
+            result = self.run_command(
+                unpack, input=remote_filename, overwrite=self.remote_overwrite
+            )
             if result.returncode:
                 print(result.stderr, file=sys.stderr)
 
@@ -204,7 +208,12 @@ class GrassSession:
         script = io.open(script_name, "w", newline="")
 
         script.write("#!/usr/bin/env python\n")
+        script.write("import os\n")
         script.write("import grass.script as gs\n")
+
+        if self.remote_overwrite is not None:
+            value = "1" if self.remote_overwrite else "0"
+            script.write(f"os.environ['GRASS_OVERWRITE']='{value}'\n")
 
         if (
             not isinstance(code, str)
@@ -245,6 +254,11 @@ class GrassSession:
         script.write("#!/usr/bin/env bash\n")
 
         # TODO: share some code with Python function
+
+        if self.remote_overwrite is not None:
+            value = "1" if self.remote_overwrite else "0"
+            script.write(f"export GRASS_OVERWRITE={value}\n")
+
         if (
             not isinstance(code, str)
             and not isinstance(code, str)
