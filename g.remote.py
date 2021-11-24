@@ -495,6 +495,7 @@ def main():
     # TODO: read script from stdin
 
     # TODO: support creating grassdata in a tmp place
+    # TODO: add also simpler interface with path
     remote_grassdata = options["grassdata"]
     remote_location = options["location"]
     remote_mapset = options["mapset"]
@@ -531,6 +532,7 @@ def main():
         directory=options["remote_workdir"],
         remote_overwrite=flags["o"],
     )
+    # TODO: flags to create versus ensure location
     if flags["l"]:
         gsession.create_location()
     gsession.put_region()
